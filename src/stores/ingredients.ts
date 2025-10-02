@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
-import axios from '../axios';
+import { supabase } from '../lib/supabaseClient';
 import showMessage from '../CustomMessage';
+
+const TABLE_NAME = 'ingredients';
 
 export const useIngredientsStore = defineStore('ingredients', {
   state: () => {
@@ -11,75 +13,84 @@ export const useIngredientsStore = defineStore('ingredients', {
   getters: {
     getById: (state) => {
       return (ingredientId: string): any => {
-        return state.ingredients.find((item: any) => item._id === ingredientId);
+        return state.ingredients.find((item: any) => item.id === ingredientId);
       };
     }
   },
   actions: {
     async fetchIngredients() {
-      axios
-        .get('/ingredients')
-        .then((response: any) => {
-          this.ingredients = response.data;
-          this.ingredients.sort((a: any, b: any) => {
-            if (a.category && b.category) {
-              const categoryComparison = a.category.localeCompare(b.category);
-              if (categoryComparison === 0) {
-                return a.name.localeCompare(b.name);
-              }
-              return categoryComparison;
-            } else if (a.category) {
-              return -1;
-            } else if (b.category) {
-              return 1;
-            } else {
-              return a.name.localeCompare(b.name);
-            }
-          });
-          showMessage('材料を取得しました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('材料の取得に失敗しました。', 'error');
-        });
+      try {
+        const { data, error } = await supabase.from(TABLE_NAME).select();
+
+        if (error) throw error;
+
+        this.ingredients = data;
+        // this.balances.sort((a: any, b: any) => dayjs(b.balance_date).diff(dayjs(a.balance_date)));
+        showMessage('材料を取得しました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('材料の取得に失敗しました。', 'error');
+      }
     },
 
     async addIngredient(addItem: any) {
-      axios
-        .post('/ingredients', addItem)
-        .then((response: any) => {
-          this.ingredients.push(response.data.ingredient);
-          showMessage('材料が登録されました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          // showMessage('材料の登録に失敗しました。', 'error');
-          showMessage(error.response.data.error, 'error');
-        });
+      console.log(addItem);
+
+      try {
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .insert([
+            {
+              name: addItem.name,
+              category_id: addItem.categoryId,
+              unit: addItem.unit
+            }
+          ])
+          .select();
+
+        if (error) throw error;
+
+        this.ingredients.push(data[0]);
+        showMessage('材料が登録されました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('材料の登録に失敗しました。', 'error');
+        return null;
+      }
     },
     async editIngredient(editItem: any) {
-      const ingredientId = editItem._id;
+      console.log(editItem);
+      try {
+        const ingredientId = editItem.id;
+        const { error } = await supabase
+          .from(TABLE_NAME)
+          .update({
+            name: editItem.name,
+            category_id: editItem.categoryId,
+            unit: editItem.unit
+          })
+          .eq('id', ingredientId);
 
-      axios
-        .patch(`/ingredients/${ingredientId}`, editItem)
-        .then((response: any) => {
-          const updateIngredient = this.getById(ingredientId);
-          Object.assign(updateIngredient, response.data.ingredient);
+        if (error) throw error;
 
-          showMessage('材料が更新されました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('材料の更新に失敗しました。', 'error');
-        });
+        // ローカルキャッシュを更新
+        const updateBalance = this.getById(ingredientId);
+
+        Object.assign(updateBalance, { ...editItem, category_id: editItem.categoryId });
+
+        showMessage('材料が更新されました。', 'success');
+        return editItem;
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('材料の更新に失敗しました。', 'error');
+        return null;
+      }
     },
     async deleteIngredient(ingredientId: string) {
       axios
         .delete(`/ingredients/${ingredientId}`)
         .then((response: any) => {
-          const indexToDelete = this.ingredients.findIndex(
-            (item: any) => item._id === ingredientId
-          );
+          const indexToDelete = this.ingredients.findIndex((item: any) => item.id === ingredientId);
 
           if (indexToDelete !== -1) {
             this.ingredients.splice(indexToDelete, 1);

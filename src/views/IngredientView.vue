@@ -20,23 +20,23 @@ const deleteIngredientName = ref('');
 const isEdit = ref(true);
 
 interface Ingredient {
-  _id: string | null;
+  id: string | null;
   name: string;
-  category: string;
+  categoryId: string;
   unit: string;
 }
 
 const form = reactive<Ingredient>({
-  _id: null,
+  id: null,
   name: '',
-  category: '',
+  categoryId: '',
   unit: ''
 });
 
 const defaultForm: Ingredient = {
-  _id: null,
+  id: null,
   name: '',
-  category: '',
+  categoryId: '',
   unit: ''
 };
 
@@ -45,7 +45,7 @@ const rules = reactive<FormRules<Ingredient>>({
     { required: true, message: '食材名を入力してください。', trigger: 'blur' },
     { min: 1, max: 15, message: '15文字以内で入力してください。', trigger: 'blur' }
   ],
-  category: [
+  categoryId: [
     {
       required: true,
       message: 'カテゴリーを選択してください。',
@@ -56,36 +56,43 @@ const rules = reactive<FormRules<Ingredient>>({
 
 const categoryOptions = [
   {
+    id: 1,
     value: '野菜',
     label: '野菜',
     type: 'success'
   },
   {
+    id: 2,
     value: '肉',
     label: '肉',
     type: 'danger'
   },
   {
+    id: 3,
     value: '魚',
     label: '魚',
     type: ''
   },
   {
+    id: 4,
     value: '卵・乳製品',
     label: '卵・乳製品',
     type: 'yellow'
   },
   {
+    id: 5,
     value: '穀物',
     label: '穀物',
     type: 'yellow'
   },
   {
+    id: 6,
     value: '果物',
     label: '果物',
     type: 'warning'
   },
   {
+    id: 7,
     value: '調味料',
     label: '調味料',
     type: 'info'
@@ -125,7 +132,9 @@ function editDialogOpen(ingredientId: string) {
   isDialogVisible.value = true;
   isEdit.value = true;
 
-  Object.assign(form, ingredientsStore.getById(ingredientId));
+  const ingredient = ingredientsStore.getById(ingredientId);
+
+  Object.assign(form, { ...ingredient, categoryId: ingredient.category_id });
 }
 
 async function deleteIngredient(ingredientId: string) {
@@ -144,6 +153,7 @@ async function saveIngredient() {
   } else {
     await ingredientsStore.addIngredient({ ...form });
   }
+  Object.assign(form, defaultForm);
   isDialogVisible.value = false;
   loadingUtils.closeLoading();
 }
@@ -151,7 +161,6 @@ async function saveIngredient() {
 async function submitForm() {
   const formEl = ruleFormRef.value;
 
-  console.log(formEl);
   if (!formEl) return;
 
   await formEl.validate((valid, fields) => {
@@ -184,9 +193,14 @@ function onCancelButtonClick() {
   deleteIngredientId.value = '';
 }
 
-function selectedType(name: string) {
-  const category = categoryOptions.find((categories: any) => categories.label === name);
+function selectedType(categoryId: string) {
+  const category = categoryOptions.find((categories: any) => categories.id === categoryId);
   return category ? category.type : '';
+}
+
+function getCategoryName(categoryId: string) {
+  const category = categoryOptions.find((categories: any) => categories.id === categoryId);
+  return category ? category.label : '';
 }
 </script>
 
@@ -200,7 +214,9 @@ function selectedType(name: string) {
             <el-table-column prop="name" label="名前" />
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag :type="selectedType(scope.row.category)">{{ scope.row.category }}</el-tag>
+                <el-tag :type="selectedType(scope.row.category_id)">{{
+                  getCategoryName(scope.row.category_id)
+                }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="unit" label="単位" />
@@ -219,7 +235,7 @@ function selectedType(name: string) {
               <template #default="scope">
                 <el-button
                   class="main-icon-button"
-                  @click="editDialogOpen(scope.row._id)"
+                  @click="editDialogOpen(scope.row.id)"
                   :icon="Edit"
                   circle
                 ></el-button>
@@ -227,7 +243,7 @@ function selectedType(name: string) {
                   class="sub-icon-button"
                   @click="
                     isConfirmDialogVisible = true;
-                    deleteIngredientId = scope.row._id;
+                    deleteIngredientId = scope.row.id;
                     deleteIngredientName = scope.row.name;
                   "
                   :icon="Delete"
@@ -253,17 +269,17 @@ function selectedType(name: string) {
           <el-input v-model="form.name" />
         </el-form-item>
 
-        <el-form-item label="カテゴリ" prop="category">
-          <el-select v-model="form.category" placeholder="Select" @change="form.unit = ''">
+        <el-form-item label="カテゴリ" prop="categoryId">
+          <el-select v-model="form.categoryId" placeholder="Select" @change="form.unit = ''">
             <el-option
               v-for="item in categoryOptions"
-              :key="item.value"
+              :key="item.id"
               :label="item.label"
-              :value="item.value"
+              :value="item.id"
             />
           </el-select>
         </el-form-item>
-        <template v-if="form.category !== '調味料'">
+        <template v-if="form.categoryId !== '7'">
           <el-form-item label="単位" prop="unit">
             <el-input v-model="form.unit" />
           </el-form-item>

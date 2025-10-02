@@ -60,19 +60,8 @@ const categoryOptions = [
 
 const target = ref('nextWeek');
 const purchased = ref<any>(null);
-const startDate = ref<any>(null);
-const endDate = ref<any>(null);
-
-const targetOptions = [
-  {
-    value: 'thisWeek',
-    label: '今週'
-  },
-  {
-    value: 'nextWeek',
-    label: '来週'
-  }
-];
+// const startDate = ref<any>(null);
+// const endDate = ref<any>(null);
 
 init();
 
@@ -80,49 +69,54 @@ init();
 // Computed
 // ========================================
 
-const selectedIntervalLabel = computed((): any => {
-  const targetOption = targetOptions.find((option) => option.value === target.value);
-  if (targetOption) {
-    return targetOption.label;
-  } else {
-    return '未定義'; // 該当するvalueが見つからなかった場合のデフォルト値
-  }
-});
+// const selectedIntervalLabel = computed((): any => {
+//   const targetOption = targetOptions.find((option) => option.value === target.value);
+//   if (targetOption) {
+//     return targetOption.label;
+//   } else {
+//     return '未定義'; // 該当するvalueが見つからなかった場合のデフォルト値
+//   }
+// });
 
 const purchaseItems = computed((): any => {
   // "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
-  const combinedPurchasesWithInfo: any = [];
+  // const combinedPurchasesWithInfo: any = [];
 
-  purchasesStore.purchases.forEach((item: any) => {
-    const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
-      ...purchase,
-      _id: item._id,
-      purchaseIndex: purchaseIndex
-    }));
-    combinedPurchasesWithInfo.push(...purchases);
-  });
+  // purchasesStore.purchases.forEach((item: any) => {
+  //   const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
+  //     ...purchase,
+  //     _id: item._id,
+  //     purchaseIndex: purchaseIndex
+  //   }));
+  //   combinedPurchasesWithInfo.push(...purchases);
+  // });
 
-  combinedPurchasesWithInfo.sort((a: any, b: any) => {
-    {
-      let targetOption = categoryOptions.find((option) => option.value === a.category);
-      const aSortOrder = targetOption?.sortOrder;
+  // combinedPurchasesWithInfo.sort((a: any, b: any) => {
+  //   {
+  //     let targetOption = categoryOptions.find((option) => option.value === a.category);
+  //     const aSortOrder = targetOption?.sortOrder;
 
-      targetOption = categoryOptions.find((option) => option.value === b.category);
-      const bSortOrder = targetOption?.sortOrder;
+  //     targetOption = categoryOptions.find((option) => option.value === b.category);
+  //     const bSortOrder = targetOption?.sortOrder;
 
-      if (aSortOrder === bSortOrder) {
-        return a.name.localeCompare(b.name);
-      } else if (aSortOrder && bSortOrder) {
-        return aSortOrder - bSortOrder;
-      }
-    }
-  });
+  //     if (aSortOrder === bSortOrder) {
+  //       return a.name.localeCompare(b.name);
+  //     } else if (aSortOrder && bSortOrder) {
+  //       return aSortOrder - bSortOrder;
+  //     }
+  //   }
+  // });
 
-  const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
+  // const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
 
-  purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
+  // purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
 
-  return filteredObjects;
+  // return filteredObjects;
+
+  return [
+    { _id: '1', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false },
+    { _id: '2', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false }
+  ];
 });
 
 // ========================================
@@ -131,30 +125,16 @@ const purchaseItems = computed((): any => {
 async function init() {
   loadingUtils.startLoading();
 
-  await getPurchases();
+  // await getPurchases();
 
   loadingUtils.closeLoading();
 }
 
 function getPurchases() {
-  // 現在の日付を取得
-  const currentDate = dayjs();
-
-  // 現在の曜日を取得 (0: 日曜日, 1: 月曜日, 2: 火曜日, など)
-  const currentDayOfWeek = currentDate.day();
-
-  if (target.value === 'nextWeek') {
-    startDate.value = currentDate.add(7 - currentDayOfWeek, 'day');
-    endDate.value = startDate.value.add(6, 'day');
-  } else if (target.value === 'thisWeek') {
-    startDate.value = currentDate.day(0);
-    endDate.value = currentDate.day(6);
-  }
-
-  purchasesStore.fetchPurchases(
-    startDate.value.format('YYYY-MM-DD'),
-    endDate.value.format('YYYY-MM-DD')
-  );
+  // purchasesStore.fetchPurchases(
+  //   startDate.value.format('YYYY-MM-DD'),
+  //   endDate.value.format('YYYY-MM-DD')
+  // );
 }
 
 function selectedType(name: string) {
@@ -173,27 +153,6 @@ const moveToPurchased = (index: number) => {
   <main>
     <PageHeader headerName="買い物リスト" />
     <div class="container">
-      <el-row>
-        <el-col :span="24">
-          <el-text tag="p">期間</el-text>
-          <el-select v-model="target" class="m-2" placeholder="Select" @change="init()">
-            <el-option
-              v-for="item in targetOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-col>
-      </el-row>
-      <el-row style="margin-top: 40px">
-        <el-col :span="24">
-          <el-text tag="p" class="sub-title">{{ selectedIntervalLabel }}</el-text>
-          <el-text tag="span"
-            >{{ startDate.format('M/D(ddd)') }} ~ {{ endDate.format('M/D(ddd)') }}</el-text
-          >
-        </el-col>
-      </el-row>
       <!-- 買い物リスト -->
       <el-row>
         <el-col :span="24">
@@ -209,7 +168,6 @@ const moveToPurchased = (index: number) => {
               </template>
             </el-table-column>
             <el-table-column prop="name" label="材料" />
-
             <el-table-column prop="quantity" label="分量">
               <template #default="scope">
                 {{ scope.row.quantity }}
@@ -220,7 +178,6 @@ const moveToPurchased = (index: number) => {
         </el-col>
       </el-row>
 
-      <!-- 購入済みリスト -->
       <!-- TODO:購入済みリスト -->
     </div>
   </main>
