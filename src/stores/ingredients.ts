@@ -87,21 +87,19 @@ export const useIngredientsStore = defineStore('ingredients', {
       }
     },
     async deleteIngredient(ingredientId: string) {
-      axios
-        .delete(`/ingredients/${ingredientId}`)
-        .then((response: any) => {
-          const indexToDelete = this.ingredients.findIndex((item: any) => item.id === ingredientId);
+      try {
+        const { error } = await supabase.from(TABLE_NAME).delete().eq('id', ingredientId);
+        if (error) throw error;
 
-          if (indexToDelete !== -1) {
-            this.ingredients.splice(indexToDelete, 1);
-          }
-
-          showMessage('材料が削除されました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('材料の削除に失敗しました。', 'error');
-        });
+        const indexToDelete = this.ingredients.findIndex((item: any) => item.id === ingredientId);
+        if (indexToDelete !== -1) {
+          this.ingredients.splice(indexToDelete, 1);
+        }
+        showMessage('材料が削除されました。', 'success');
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('材料の削除に失敗しました。', 'error');
+      }
     }
   }
 });
