@@ -20,13 +20,16 @@ export const useIngredientsStore = defineStore('ingredients', {
   actions: {
     async fetchIngredients() {
       try {
+        // すでにデータがあるなら何もしない
+        if (this.ingredients.length > 0) return;
+
         const { data, error } = await supabase.from(TABLE_NAME).select();
 
         if (error) throw error;
 
         this.ingredients = data;
         // this.balances.sort((a: any, b: any) => dayjs(b.balance_date).diff(dayjs(a.balance_date)));
-        showMessage('材料を取得しました。', 'success');
+        // showMessage('材料を取得しました。', 'success');
       } catch (error) {
         console.error('Error:', error);
         showMessage('材料の取得に失敗しました。', 'error');
@@ -34,8 +37,6 @@ export const useIngredientsStore = defineStore('ingredients', {
     },
 
     async addIngredient(addItem: any) {
-      console.log(addItem);
-
       try {
         const { data, error } = await supabase
           .from(TABLE_NAME)
@@ -59,7 +60,6 @@ export const useIngredientsStore = defineStore('ingredients', {
       }
     },
     async editIngredient(editItem: any) {
-      console.log(editItem);
       try {
         const ingredientId = editItem.id;
         const { error } = await supabase

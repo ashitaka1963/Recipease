@@ -6,7 +6,7 @@ import TheSideMenu from './components/TheSideMenu.vue';
 <template>
   <div class="common-layout">
     <el-container>
-      <!-- <el-aside class="side-menu" width="80px"><TheSideMenu /></el-aside> -->
+      <el-aside class="side-menu" width="80px"><TheSideMenu /></el-aside>
       <el-main><RouterView /></el-main>
     </el-container>
   </div>

@@ -1,28 +1,37 @@
 <script setup lang="ts">
 // TODO:調味料は重複させない？
 
-import { ref, computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
+import { Delete, Edit } from '@element-plus/icons-vue';
+import type { FormInstance, FormRules } from 'element-plus';
 import { usePurchasesStore } from '@/stores/purchases';
-
-import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
+import { useIngredientsStore } from '@/stores/ingredients';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
 import loadingUtils from '../CustomLoading';
 
 const purchasesStore = usePurchasesStore();
+const ingredientsStore = useIngredientsStore();
 
+const ruleFormRef = ref<FormInstance>();
+const isDialogVisible = ref(false);
+const isConfirmDialogVisible = ref(false);
+const deletePurchaseId = ref('');
+const deletePurchaseName = ref('');
+const isEdit = ref(true);
+
+// TODO: tagのtype
 const categoryOptions = [
   {
-    value: '野菜',
-    label: '野菜',
+    value: '野菜類',
+    label: '野菜類',
     type: 'success',
     sortOrder: 1
   },
   {
-    value: '肉',
-    label: '肉',
+    value: '肉類',
+    label: '肉類',
     type: 'danger',
     sortOrder: 5
   },
@@ -63,11 +72,55 @@ const purchased = ref<any>(null);
 // const startDate = ref<any>(null);
 // const endDate = ref<any>(null);
 
+interface Purchase {
+  id: string | null;
+
+  ingredientId: number | null;
+  quantity: number | null;
+  isPurchased: boolean;
+}
+
+const form = reactive<Purchase>({
+  id: '1',
+  ingredientId: null,
+  quantity: null,
+  isPurchased: false
+});
+
+const defaultForm: Purchase = {
+  id: null,
+  ingredientId: null,
+  quantity: null,
+  isPurchased: false
+};
+
+const rules = reactive<FormRules<Purchase>>({
+  // ingredientId: [
+  //   { required: true, message: '購入品を選択してください。', trigger: 'blur' }
+  //   // { min: 1, max: 15, message: '15文字以内で入力してください。', trigger: 'blur' }
+  // ]
+  // categoryId: [
+  //   {
+  //     required: true,
+  //     message: 'カテゴリーを選択してください。',
+  //     trigger: 'blur'
+  //   }
+  // ]
+});
+
 init();
 
 // ========================================
 // Computed
 // ========================================
+
+const dialogTitle = computed((): any => {
+  return isEdit.value ? '編集' : '新規追加';
+});
+
+const dialogButtonName = computed((): any => {
+  return isEdit.value ? '更新' : '追加';
+});
 
 // const selectedIntervalLabel = computed((): any => {
 //   const targetOption = targetOptions.find((option) => option.value === target.value);
@@ -78,46 +131,40 @@ init();
 //   }
 // });
 
-const purchaseItems = computed((): any => {
-  // "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
-  // const combinedPurchasesWithInfo: any = [];
+// const purchaseItems = computed((): any => {
+//   return purchasesStore.purchases;
 
-  // purchasesStore.purchases.forEach((item: any) => {
-  //   const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
-  //     ...purchase,
-  //     _id: item._id,
-  //     purchaseIndex: purchaseIndex
-  //   }));
-  //   combinedPurchasesWithInfo.push(...purchases);
-  // });
-
-  // combinedPurchasesWithInfo.sort((a: any, b: any) => {
-  //   {
-  //     let targetOption = categoryOptions.find((option) => option.value === a.category);
-  //     const aSortOrder = targetOption?.sortOrder;
-
-  //     targetOption = categoryOptions.find((option) => option.value === b.category);
-  //     const bSortOrder = targetOption?.sortOrder;
-
-  //     if (aSortOrder === bSortOrder) {
-  //       return a.name.localeCompare(b.name);
-  //     } else if (aSortOrder && bSortOrder) {
-  //       return aSortOrder - bSortOrder;
-  //     }
-  //   }
-  // });
-
-  // const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
-
-  // purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
-
-  // return filteredObjects;
-
-  return [
-    { _id: '1', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false },
-    { _id: '2', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false }
-  ];
-});
+// "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
+// const combinedPurchasesWithInfo: any = [];
+// purchasesStore.purchases.forEach((item: any) => {
+//   const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
+//     ...purchase,
+//     _id: item._id,
+//     purchaseIndex: purchaseIndex
+//   }));
+//   combinedPurchasesWithInfo.push(...purchases);
+// });
+// combinedPurchasesWithInfo.sort((a: any, b: any) => {
+//   {
+//     let targetOption = categoryOptions.find((option) => option.value === a.category);
+//     const aSortOrder = targetOption?.sortOrder;
+//     targetOption = categoryOptions.find((option) => option.value === b.category);
+//     const bSortOrder = targetOption?.sortOrder;
+//     if (aSortOrder === bSortOrder) {
+//       return a.name.localeCompare(b.name);
+//     } else if (aSortOrder && bSortOrder) {
+//       return aSortOrder - bSortOrder;
+//     }
+//   }
+// });
+// const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
+// purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
+// return filteredObjects;
+// return [
+//   { _id: '1', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false },
+//   { _id: '2', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false }
+// ];
+// });
 
 // ========================================
 // Methods
@@ -125,16 +172,35 @@ const purchaseItems = computed((): any => {
 async function init() {
   loadingUtils.startLoading();
 
-  // await getPurchases();
+  await getPurchases();
+  await getIngredients();
 
   loadingUtils.closeLoading();
 }
 
 function getPurchases() {
-  // purchasesStore.fetchPurchases(
-  //   startDate.value.format('YYYY-MM-DD'),
-  //   endDate.value.format('YYYY-MM-DD')
-  // );
+  purchasesStore.fetchPurchases();
+}
+
+function getIngredients() {
+  ingredientsStore.fetchIngredients();
+}
+
+function editDialogOpen(purchaseId: string) {
+  isDialogVisible.value = true;
+  isEdit.value = true;
+
+  const purchase = purchasesStore.getById(purchaseId);
+
+  Object.assign(form, purchase);
+}
+
+async function deletePurchase(ingredientId: string) {
+  loadingUtils.startLoading();
+
+  await purchasesStore.deletePurchase(ingredientId);
+
+  loadingUtils.closeLoading();
 }
 
 function selectedType(name: string) {
@@ -143,10 +209,58 @@ function selectedType(name: string) {
 }
 
 const moveToPurchased = (index: number) => {
-  const purchasedtem = purchaseItems.value[index];
-
-  purchasesStore.changeIsPurchased(purchasedtem._id, purchasedtem.purchaseIndex);
+  purchasesStore.changeIsPurchased(
+    purchasesStore.purchases[index].id,
+    !purchasesStore.purchases[index].isPurchased
+  );
 };
+
+async function submitForm() {
+  const formEl = ruleFormRef.value;
+
+  if (!formEl) return;
+
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      savePuchase();
+    } else {
+      console.log('error submit!', fields);
+    }
+  });
+}
+
+async function savePuchase() {
+  loadingUtils.startLoading();
+
+  if (isEdit.value) {
+    await purchasesStore.editPurchase({ ...form });
+  } else {
+    await purchasesStore.addPurchase({ ...form });
+  }
+
+  Object.assign(form, defaultForm);
+  isDialogVisible.value = false;
+  loadingUtils.closeLoading();
+}
+
+function cancelForm() {
+  const formEl = ruleFormRef.value;
+  if (!formEl) return;
+  formEl.resetFields();
+  Object.assign(form, defaultForm);
+  isDialogVisible.value = false;
+}
+
+function onConfirmButtonClick() {
+  deletePurchase(deletePurchaseId.value);
+  onCancelButtonClick();
+}
+
+function onCancelButtonClick() {
+  isConfirmDialogVisible.value = false;
+  deletePurchaseName.value = '';
+  deletePurchaseId.value = '';
+}
 </script>
 
 <template>
@@ -154,24 +268,61 @@ const moveToPurchased = (index: number) => {
     <PageHeader headerName="買い物リスト" />
     <div class="container">
       <!-- 買い物リスト -->
+
       <el-row>
         <el-col :span="24">
-          <el-table :data="purchaseItems" style="width: 80%">
+          <el-table :data="purchasesStore.purchases" style="width: 80%">
             <el-table-column width="55">
               <template #default="scope">
-                <el-checkbox @click.prevent="moveToPurchased(scope.$index)" />
+                <el-checkbox
+                  v-model="scope.row.isPurchased"
+                  @click.prevent="moveToPurchased(scope.$index)"
+                ></el-checkbox>
               </template>
             </el-table-column>
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag :type="selectedType(scope.row.category)">{{ scope.row.category }}</el-tag>
+                <el-tag :type="selectedType(scope.row.ingredientCategoryName)">{{
+                  scope.row.ingredientCategoryName
+                }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="name" label="材料" />
+            <el-table-column prop="ingredientName" label="材料" />
             <el-table-column prop="quantity" label="分量">
               <template #default="scope">
                 {{ scope.row.quantity }}
-                {{ scope.row.unit }}
+                {{ scope.row.ingredientUnit }}
+              </template>
+            </el-table-column>
+            <el-table-column width="130">
+              <template #header>
+                <el-button
+                  class="main-button"
+                  color="#ff8e3c"
+                  @click="
+                    isDialogVisible = true;
+                    isEdit = false;
+                  "
+                  >リストに追加</el-button
+                >
+              </template>
+              <template #default="scope">
+                <el-button
+                  class="main-icon-button"
+                  @click="editDialogOpen(scope.row.id)"
+                  :icon="Edit"
+                  circle
+                ></el-button>
+                <el-button
+                  class="sub-icon-button"
+                  @click="
+                    isConfirmDialogVisible = true;
+                    deletePurchaseId = scope.row.id;
+                    deletePurchaseName = scope.row.ingredientName;
+                  "
+                  :icon="Delete"
+                  circle
+                ></el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -180,6 +331,56 @@ const moveToPurchased = (index: number) => {
 
       <!-- TODO:購入済みリスト -->
     </div>
+
+    <!-- dialog -->
+    <el-dialog
+      v-model="isDialogVisible"
+      :title="dialogTitle"
+      width="30%"
+      align-center
+      :before-close="cancelForm"
+    >
+      <el-form ref="ruleFormRef" :model="form" :rules="rules" label-width="80px" status-icon>
+        <!-- <el-form-item label="名前" prop="name">
+          <el-input v-model="form.ingredientId" />
+        </el-form-item> -->
+
+        <el-form-item label="名前" prop="name">
+          <el-select v-model="form.ingredientId" placeholder="Select">
+            <el-option
+              v-for="item in ingredientsStore.ingredients"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="分量" prop="quantity">
+          <el-input v-model="form.quantity" />
+        </el-form-item>
+
+        <!-- 
+        <template v-if="form.categoryId !== '7'">
+          <el-form-item label="単位" prop="unit">
+            <el-input v-model="form.unit" />
+          </el-form-item>
+        </template> -->
+        <el-form-item>
+          <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
+            dialogButtonName
+          }}</el-button>
+          <el-button type="info" @click="cancelForm">中止</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+    <ConfirmDialog
+      :isDialogVisible="isConfirmDialogVisible"
+      :message="`${deletePurchaseName}を削除しますか？`"
+      @clickConfirmed="onConfirmButtonClick"
+      @clickCanceled="onCancelButtonClick"
+    />
   </main>
 </template>
 

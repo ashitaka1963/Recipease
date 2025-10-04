@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
-import axios from '../axios';
+import { supabase } from '../lib/supabaseClient';
 import showMessage from '../CustomMessage';
+
+const TABLE_NAME = 'purchases';
 
 export const usePurchasesStore = defineStore('purchases', {
   state: () => {
@@ -11,96 +13,173 @@ export const usePurchasesStore = defineStore('purchases', {
   getters: {
     getById: (state) => {
       return (purchaseId: string): any => {
-        return state.purchases.find((item: any) => item._id === purchaseId);
+        return state.purchases.find((item: any) => item.id === purchaseId);
       };
     }
   },
   actions: {
-    async fetchPurchases(startDate: string, endDate: string) {
-      const queryParams = {
-        startDate: startDate,
-        endDate: endDate
-      };
+    async fetchPurchases() {
+      // TODO:RLS
 
-      axios
-        .get('/purchases', {
-          params: queryParams // paramsオブジェクトにクエリパラメータを指定
-        })
-        .then((response: any) => {
-          this.purchases = response.data;
-          showMessage('買い物リストを取得しました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('買い物リストの取得に失敗しました。', 'error');
-        });
+      try {
+        const { data, error } = await supabase.from(TABLE_NAME).select(`
+            id, 
+            quantity, 
+            is_purchased,
+            ingredients (
+              id, 
+              name, 
+              unit,
+              ingredient_categories (
+                id,
+                name
+              )
+            )
+            `);
+
+        console.log(data);
+
+        if (error) throw error;
+
+        this.purchases = data.map(this.mapRow);
+
+        showMessage('買い物リストを取得しました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('買い物リストの取得に失敗しました。', 'error');
+      }
     },
 
     async addPurchase(addItem: any) {
-      axios
-        .post('/purchases', addItem)
-        .then((response: any) => {
-          this.purchases.push(response.data.purchase);
-          showMessage('買い物リストが登録されました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('買い物リストの登録に失敗しました。', 'error');
-        });
+      console.log(addItem);
+      try {
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .insert([
+            {
+              ingredient_id: addItem.ingredientId,
+              quantity: addItem.quantity,
+              is_purchased: addItem.isPurchased
+            }
+          ])
+          .select();
+
+        if (error) throw error;
+
+        // console.log(addItem);
+        // console.log(this.mapRow(data[0]));
+
+        this.purchases.push(addItem);
+        // this.purchases.push(this.mapRow(data[0])); //TODO:
+        showMessage('材料が登録されました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('材料の登録に失敗しました。', 'error');
+        return null;
+      }
+
+      // axios
+      //   .post('/purchases', addItem)
+      //   .then((response: any) => {
+      //     this.purchases.push(response.data.purchase);
+      //     showMessage('買い物リストが登録されました。', 'success');
+      //   })
+      //   .catch((error: any) => {
+      //     console.error('Error:', error);
+      //     showMessage('買い物リストの登録に失敗しました。', 'error');
+      //   });
     },
-    // async editPurchase(editItem: any) {
-    //   console.log(editItem);
-    //   const purchaseId = editItem._id;
+    async editPurchase(editItem: any) {
+      try {
+        const purchaseId = editItem.id;
+        const { error } = await supabase
+          .from(TABLE_NAME)
+          .update({
+            ingredient_id: editItem.ingredientId,
+            quantity: editItem.quantity
+          })
+          .eq('id', purchaseId);
 
-    //   axios
-    //     .patch(`/purchases/${purchaseId}`, editItem)
-    //     .then((response: any) => {
-    //       const updatePurchase = this.getById(purchaseId);
-    //       Object.assign(updatePurchase, response.data.purchase);
+        if (error) throw error;
 
-    //       showMessage('買い物リストが更新されました。', 'success');
-    //     })
-    //     .catch((error: any) => {
-    //       console.error('Error:', error);
-    //       showMessage('買い物リストの更新に失敗しました。', 'error');
-    //     });
-    // },
-    async changeIsPurchased(purchaseId: string, purchaseIndex: number) {
-      axios
-        .patch(`/purchases/${purchaseId}`, { index: purchaseIndex })
-        .then((response: any) => {
-          const updatePurchase = this.getById(purchaseId);
+        // ローカルキャッシュを更新
+        const updateBalance = this.getById(purchaseId);
 
-          updatePurchase.purchases[purchaseIndex].isPurchased =
-            !updatePurchase.purchases[purchaseIndex].isPurchased;
+        Object.assign(updateBalance, editItem);
 
-          // Object.assign(updatePurchase, response.data.purchase);
-          showMessage(
-            `${updatePurchase.purchases[purchaseIndex].name}を購入済みに移動しました。`,
-            'success'
-          );
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('買い物リストの更新に失敗しました。', 'error');
-        });
+        showMessage('材料が更新されました。', 'success');
+        return editItem;
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('材料の更新に失敗しました。', 'error');
+        return null;
+      }
+    },
+    async changeIsPurchased(id: any, isPurchased: boolean) {
+      try {
+        const { error } = await supabase
+          .from(TABLE_NAME)
+          .update({ is_purchased: isPurchased })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        // ローカルキャッシュを更新
+        const updatePurchase = this.getById(id);
+
+        console.log(updatePurchase, id);
+
+        Object.assign(updatePurchase, { isPurchased: isPurchased });
+
+        showMessage('材料が更新されました。', 'success');
+        // return null;
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('材料の更新に失敗しました。', 'error');
+        return null;
+      }
     },
     async deletePurchase(purchaseId: string) {
-      axios
-        .delete(`/purchases/${purchaseId}`)
-        .then((response: any) => {
-          const indexToDelete = this.purchases.findIndex((item: any) => item._id === purchaseId);
+      try {
+        const { error } = await supabase.from(TABLE_NAME).delete().eq('id', purchaseId);
+        if (error) throw error;
 
-          if (indexToDelete !== -1) {
-            this.purchases.splice(indexToDelete, 1);
-          }
+        const indexToDelete = this.purchases.findIndex((item: any) => item.id === purchaseId);
+        if (indexToDelete !== -1) {
+          this.purchases.splice(indexToDelete, 1);
+        }
+        showMessage('材料が削除されました。', 'success');
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('材料の削除に失敗しました。', 'error');
+      }
+      // axios
+      //   .delete(`/purchases/${purchaseId}`)
+      //   .then((response: any) => {
+      //     const indexToDelete = this.purchases.findIndex((item: any) => item.id === purchaseId);
 
-          showMessage('買い物リストが削除されました。', 'success');
-        })
-        .catch((error: any) => {
-          console.error('Error:', error);
-          showMessage('買い物リストの削除に失敗しました。', 'error');
-        });
+      //     if (indexToDelete !== -1) {
+      //       this.purchases.splice(indexToDelete, 1);
+      //     }
+
+      //     showMessage('買い物リストが削除されました。', 'success');
+      //   })
+      //   .catch((error: any) => {
+      //     console.error('Error:', error);
+      //     showMessage('買い物リストの削除に失敗しました。', 'error');
+      //   });
+    },
+    mapRow(row: any) {
+      return {
+        id: row.id,
+        quantity: row.quantity,
+        isPurchased: row.is_purchased,
+        ingredientId: row.ingredients.id,
+        ingredientName: row.ingredients.name,
+        ingredientUnit: row.ingredients.unit,
+        ingredientCategoryId: row.ingredients.ingredient_categories.id,
+        ingredientCategoryName: row.ingredients.ingredient_categories.name
+      };
     }
   }
 });

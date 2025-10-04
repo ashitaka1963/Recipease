@@ -51,8 +51,8 @@ const router = createRouter({
     },
     {
       path: '/',
-      name: 'IngredientView',
-      component: IngredientView
+      name: 'PurchaseView',
+      component: PurchaseView
     }
   ]
 });
