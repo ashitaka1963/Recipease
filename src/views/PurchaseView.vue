@@ -131,39 +131,51 @@ const dialogButtonName = computed((): any => {
 //   }
 // });
 
-// const purchaseItems = computed((): any => {
-//   return purchasesStore.purchases;
+const purchasedItems = computed(() =>
+  purchasesStore.purchases
+    .filter((i: any) => !i.isPurchased)
+    .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
+);
 
-// "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
-// const combinedPurchasesWithInfo: any = [];
-// purchasesStore.purchases.forEach((item: any) => {
-//   const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
-//     ...purchase,
-//     _id: item._id,
-//     purchaseIndex: purchaseIndex
-//   }));
-//   combinedPurchasesWithInfo.push(...purchases);
-// });
-// combinedPurchasesWithInfo.sort((a: any, b: any) => {
-//   {
-//     let targetOption = categoryOptions.find((option) => option.value === a.category);
-//     const aSortOrder = targetOption?.sortOrder;
-//     targetOption = categoryOptions.find((option) => option.value === b.category);
-//     const bSortOrder = targetOption?.sortOrder;
-//     if (aSortOrder === bSortOrder) {
-//       return a.name.localeCompare(b.name);
-//     } else if (aSortOrder && bSortOrder) {
-//       return aSortOrder - bSortOrder;
+const unpurchasedItems = computed(() =>
+  purchasesStore.purchases
+    .filter((i: any) => i.isPurchased)
+    .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
+);
+
+// const purchaseItems = computed((): any => {
+//   // return purchasesStore.purchases;
+
+//   // "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
+//   const combinedPurchasesWithInfo: any = [];
+//   purchasesStore.purchases.forEach((item: any) => {
+//     const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
+//       ...purchase,
+//       _id: item._id,
+//       purchaseIndex: purchaseIndex
+//     }));
+//     combinedPurchasesWithInfo.push(...purchases);
+//   });
+//   combinedPurchasesWithInfo.sort((a: any, b: any) => {
+//     {
+//       let targetOption = categoryOptions.find((option) => option.value === a.category);
+//       const aSortOrder = targetOption?.sortOrder;
+//       targetOption = categoryOptions.find((option) => option.value === b.category);
+//       const bSortOrder = targetOption?.sortOrder;
+//       if (aSortOrder === bSortOrder) {
+//         return a.name.localeCompare(b.name);
+//       } else if (aSortOrder && bSortOrder) {
+//         return aSortOrder - bSortOrder;
+//       }
 //     }
-//   }
-// });
-// const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
-// purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
-// return filteredObjects;
-// return [
-//   { _id: '1', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false },
-//   { _id: '2', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false }
-// ];
+//   });
+//   const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
+//   purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
+//   return filteredObjects;
+//   // return [
+//   //   { _id: '1', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false },
+//   //   { _id: '2', category: '野菜', name: 'トマト', quantity: 2, unit: '個', isPurchased: false }
+//   // ];
 // });
 
 // ========================================
@@ -208,11 +220,8 @@ function selectedType(name: string) {
   return category ? category.type : '';
 }
 
-const moveToPurchased = (index: number) => {
-  purchasesStore.changeIsPurchased(
-    purchasesStore.purchases[index].id,
-    !purchasesStore.purchases[index].isPurchased
-  );
+const moveToPurchased = (purchaseId: number, isPurchased: boolean) => {
+  purchasesStore.changeIsPurchased(purchaseId, !isPurchased);
 };
 
 async function submitForm() {
@@ -268,15 +277,14 @@ function onCancelButtonClick() {
     <PageHeader headerName="買い物リスト" />
     <div class="container">
       <!-- 買い物リスト -->
-
       <el-row>
         <el-col :span="24">
-          <el-table :data="purchasesStore.purchases" style="width: 80%">
+          <el-table :data="purchasedItems" style="width: 80%">
             <el-table-column width="55">
               <template #default="scope">
                 <el-checkbox
                   v-model="scope.row.isPurchased"
-                  @click.prevent="moveToPurchased(scope.$index)"
+                  @click.prevent="moveToPurchased(scope.row.id, scope.row.isPurchased)"
                 ></el-checkbox>
               </template>
             </el-table-column>
@@ -329,7 +337,39 @@ function onCancelButtonClick() {
         </el-col>
       </el-row>
 
-      <!-- TODO:購入済みリスト -->
+      <!-- 購入済みリスト -->
+      <el-collapse>
+        <el-collapse-item title="購入済み" name="1">
+          <el-row>
+            <el-col :span="24">
+              <el-table :data="unpurchasedItems" style="width: 80%">
+                <el-table-column width="55">
+                  <template #default="scope">
+                    <el-checkbox
+                      v-model="scope.row.isPurchased"
+                      @click.prevent="moveToPurchased(scope.row.id, scope.row.isPurchased)"
+                    ></el-checkbox>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="category" label="カテゴリ">
+                  <template #default="scope">
+                    <el-tag :type="selectedType(scope.row.ingredientCategoryName)">{{
+                      scope.row.ingredientCategoryName
+                    }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="ingredientName" label="材料" />
+                <el-table-column prop="quantity" label="分量">
+                  <template #default="scope">
+                    {{ scope.row.quantity }}
+                    {{ scope.row.ingredientUnit }}
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-col>
+          </el-row></el-collapse-item
+        >
+      </el-collapse>
     </div>
 
     <!-- dialog -->
