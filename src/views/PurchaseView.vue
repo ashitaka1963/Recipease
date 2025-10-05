@@ -173,7 +173,7 @@ async function init() {
   loadingUtils.startLoading();
 
   await getPurchases();
-  await getIngredients();
+  getIngredients();
 
   loadingUtils.closeLoading();
 }

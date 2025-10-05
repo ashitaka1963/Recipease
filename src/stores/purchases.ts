@@ -51,7 +51,6 @@ export const usePurchasesStore = defineStore('purchases', {
     },
 
     async addPurchase(addItem: any) {
-      console.log(addItem);
       try {
         const { data, error } = await supabase
           .from(TABLE_NAME)

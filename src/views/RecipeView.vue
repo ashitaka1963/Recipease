@@ -5,10 +5,11 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { Search, Delete, Edit } from '@element-plus/icons-vue';
+import { Search, Delete, Edit, Link } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 
 import { useRecipesStore } from '@/stores/recipes';
+import { useIngredientsStore } from '@/stores/ingredients';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
@@ -16,6 +17,7 @@ import loadingUtils from '../CustomLoading';
 
 const router = useRouter();
 const recipesStore = useRecipesStore();
+const ingredientsStore = useIngredientsStore();
 
 const ruleFormRef = ref<FormInstance>();
 const isDialogVisible = ref(false);
@@ -104,27 +106,33 @@ const levelOptions = [
 ];
 
 interface Recipe {
-  _id: string | null;
+  id: string | null;
   name: String;
   type: String;
   genre: String;
-  level: String;
+  // level: String;
+  referenceUrl: String;
+  ingredients: Array<any>;
 }
 
 const form = reactive<Recipe>({
-  _id: null,
+  id: null,
   name: '',
   type: typeOptions[0].value,
   genre: genreOptions[0].value,
-  level: levelOptions[0].value
+  // level: levelOptions[0].value,
+  referenceUrl: '',
+  ingredients: []
 });
 
 const defaultForm: Recipe = {
-  _id: null,
+  id: null,
   name: '',
   type: typeOptions[0].value,
   genre: genreOptions[0].value,
-  level: levelOptions[1].value
+  // level: levelOptions[1].value,
+  referenceUrl: '',
+  ingredients: []
 };
 
 const rules = reactive<FormRules<Recipe>>({
@@ -180,12 +188,17 @@ async function init() {
   loadingUtils.startLoading();
 
   await getRecipes();
+  getIngredients();
 
   loadingUtils.closeLoading();
 }
 
 function getRecipes() {
   recipesStore.fetchRecipes();
+}
+
+function getIngredients() {
+  ingredientsStore.fetchIngredients();
 }
 
 function editDialogOpen(recipeId: string) {
@@ -211,8 +224,15 @@ async function saveRecipe() {
   } else {
     await recipesStore.addRecipe({ ...form });
   }
+  Object.assign(form, defaultForm);
   isDialogVisible.value = false;
   loadingUtils.closeLoading();
+}
+
+function addIngredient() {
+  form.ingredients.push({ id: '' });
+
+  console.log(form.ingredients);
 }
 
 async function submitForm() {
@@ -264,7 +284,29 @@ function selectedType(options: any, name: string) {
       <el-row>
         <el-col :span="24">
           <el-table :data="recipesStore.recipes" style="width: 100%">
-            <el-table-column prop="name" label="レシピ名" />
+            <el-table-column prop="name" label="レシピ名">
+              <template #default="scope">
+                {{ scope.row.name }}
+
+                <template v-if="scope.row.referenceUrl">
+                  <el-button
+                    class="sub-icon-button"
+                    :icon="Link"
+                    text
+                    style="padding-left: 0px; padding-right: 0px"
+                    tag="a"
+                    target="_blank"
+                    :href="scope.row.referenceUrl"
+                  ></el-button>
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="材料">
+              <template #default="scope">
+                <!-- TODO: 調味料省く -->
+                {{ scope.row.ingredients.map((i: any) => i.name).join(', ') }}
+              </template>
+            </el-table-column>
             <el-table-column prop="type" label="タイプ">
               <template #default="scope">
                 <el-tag :type="selectedType(typeOptions, scope.row.type)">{{
@@ -272,18 +314,7 @@ function selectedType(options: any, name: string) {
                 }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="genre" label="ジャンル">
-              <!-- <template #default="scope">
-                <el-tag class="ml-2" type="info">{{ scope.row.genre }}</el-tag>
-              </template> -->
-            </el-table-column>
-            <el-table-column prop="level" label="難易度">
-              <template #default="scope">
-                <el-tag :type="selectedType(levelOptions, scope.row.level)">{{
-                  scope.row.level
-                }}</el-tag>
-              </template>
-            </el-table-column>
+            <el-table-column prop="genre" label="ジャンル" />
             <el-table-column width="160">
               <template #header>
                 <el-button
@@ -297,15 +328,15 @@ function selectedType(options: any, name: string) {
                 >
               </template>
               <template #default="scope">
-                <el-button
+                <!-- <el-button
                   class="normal-icon-button"
-                  @click="goToRecipeDetailView(scope.row._id)"
+                  @click="goToRecipeDetailView(scope.row.id)"
                   :icon="Search"
                   circle
-                ></el-button>
+                ></el-button> -->
                 <el-button
                   class="main-icon-button"
-                  @click="editDialogOpen(scope.row._id)"
+                  @click="editDialogOpen(scope.row.id)"
                   :icon="Edit"
                   circle
                 ></el-button>
@@ -313,7 +344,7 @@ function selectedType(options: any, name: string) {
                   class="sub-icon-button"
                   @click="
                     isConfirmDialogVisible = true;
-                    deleteRecipeId = scope.row._id;
+                    deleteRecipeId = scope.row.id;
                     deleteRecipeName = scope.row.name;
                   "
                   :icon="Delete"
@@ -359,7 +390,28 @@ function selectedType(options: any, name: string) {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="難易度" prop="level">
+        <el-form-item label="参考URL" prop="referenceUrl">
+          <el-input v-model="form.referenceUrl" />
+        </el-form-item>
+
+        <el-form-item label="材料" prop="referenceUrl">
+          <div
+            v-for="(ingredient, index) in form.ingredients"
+            :key="index"
+            class="mb-2 flex gap-2 items-center"
+          >
+            <el-select v-model="ingredient.id" placeholder="材料を選択">
+              <el-option
+                v-for="item in ingredientsStore.ingredients"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
+            </el-select>
+          </div>
+          <el-button class="main-button" color="#ff8e3c" @click="addIngredient"> +</el-button>
+        </el-form-item>
+        <!-- <el-form-item label="難易度" prop="level">
           <el-select v-model="form.level" placeholder="Select">
             <el-option
               v-for="item in levelOptions"
@@ -368,7 +420,7 @@ function selectedType(options: any, name: string) {
               :value="item.value"
             />
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
             dialogButtonName
