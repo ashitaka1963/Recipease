@@ -153,14 +153,14 @@ const rules = reactive<FormRules<Recipe>>({
       message: 'カテゴリーを選択してください。',
       trigger: 'blur'
     }
-  ],
-  level: [
-    {
-      required: true,
-      message: 'カテゴリーを選択してください。',
-      trigger: 'blur'
-    }
   ]
+  // level: [
+  //   {
+  //     required: true,
+  //     message: 'カテゴリーを選択してください。',
+  //     trigger: 'blur'
+  //   }
+  // ]
 });
 
 init();

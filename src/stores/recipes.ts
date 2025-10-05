@@ -70,19 +70,21 @@ export const useRecipesStore = defineStore('recipes', {
           ])
           .select();
 
+        if (!data) return;
         const recipeId = data[0].id;
         addItem.id = recipeId;
+
         if (error) throw error;
 
         if (addItem.ingredients.length >= 0) {
           // レシピ材料テーブル追加
-
           const payload = addItem.ingredients.map((ri: any) => ({
             recipe_id: recipeId,
             ingredient_id: ri.id,
             quantity: ri.quantity
           }));
 
+          // TODO: error handling
           await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).insert(payload).select();
 
           if (error) throw error;
