@@ -177,6 +177,31 @@ const dialogButtonName = computed((): any => {
   return isEdit.value ? '更新' : '追加';
 });
 
+// グループ化処理
+const groupedOptions = computed<any[]>(() =>
+  Object.values(
+    ingredientsStore.ingredients.reduce(
+      (acc: any, cur: any) => {
+        const categoryId = cur.categoryId;
+        if (!acc[categoryId]) {
+          acc[categoryId] = {
+            label: cur.categoryName ?? '未分類',
+            options: []
+          };
+        }
+
+        acc[categoryId].options.push({
+          value: cur.id,
+          label: cur.name
+        });
+
+        return acc;
+      },
+      {} as Record<number, { label: string; options: { value: number; label: string }[] }>
+    )
+  )
+);
+
 // ========================================
 // Methods
 // ========================================
@@ -394,33 +419,29 @@ function selectedType(options: any, name: string) {
           <el-input v-model="form.referenceUrl" />
         </el-form-item>
 
-        <el-form-item label="材料" prop="referenceUrl">
+        <el-form-item label="材料" prop="ingredientId">
           <div
             v-for="(ingredient, index) in form.ingredients"
             :key="index"
             class="mb-2 flex gap-2 items-center"
           >
             <el-select v-model="ingredient.id" placeholder="材料を選択">
-              <el-option
-                v-for="item in ingredientsStore.ingredients"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
+              <el-option-group
+                v-for="group in groupedOptions"
+                :key="group.label"
+                :label="group.label"
+              >
+                <el-option
+                  v-for="item in group.options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-option-group>
             </el-select>
           </div>
           <el-button class="main-button" color="#ff8e3c" @click="addIngredient"> +</el-button>
         </el-form-item>
-        <!-- <el-form-item label="難易度" prop="level">
-          <el-select v-model="form.level" placeholder="Select">
-            <el-option
-              v-for="item in levelOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item> -->
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
             dialogButtonName

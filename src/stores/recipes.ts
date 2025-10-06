@@ -41,23 +41,19 @@ export const useRecipesStore = defineStore('recipes', {
 
         if (error) throw error;
 
-        // this.recipes = data;
-
         this.recipes = data.map(this.mapRow);
 
-        console.log(this.recipes);
-
-        // showMessage('買い物リストを取得しました。', 'success');
+        showMessage('レシピリストを取得しました。', 'success');
       } catch (error) {
         console.error('Error:', error);
-        showMessage('買い物リストの取得に失敗しました。', 'error');
+        showMessage('レシピリストの取得に失敗しました。', 'error');
       }
     },
 
     async addRecipe(addItem: any) {
       try {
-        // レシピテーブル追加
-        let { data, error } = await supabase
+        // --- ① レシピ追加 --
+        const { data: recipe, error: recipeError } = await supabase
           .from(TABLE_NAME)
           .insert([
             {
@@ -68,14 +64,13 @@ export const useRecipesStore = defineStore('recipes', {
               dish_type: addItem.type
             }
           ])
-          .select();
+          .select('id') // 登録したレコードのIDを取得
+          .single();
 
-        if (!data) return;
-        const recipeId = data[0].id;
-        addItem.id = recipeId;
+        if (recipeError) throw recipeError;
+        const recipeId = recipe.id;
 
-        if (error) throw error;
-
+        // --- ② レシピ追加 --
         if (addItem.ingredients.length >= 0) {
           // レシピ材料テーブル追加
           const payload = addItem.ingredients.map((ri: any) => ({
@@ -84,41 +79,54 @@ export const useRecipesStore = defineStore('recipes', {
             quantity: ri.quantity
           }));
 
-          // TODO: error handling
-          await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).insert(payload).select();
+          const { error: ingredientsError } = await supabase
+            .from(RECIPE_INGREDIENTS_TABLE_NAME)
+            .insert(payload);
 
-          if (error) throw error;
+          if (ingredientsError) throw ingredientsError;
         }
 
-        this.recipes.push(addItem);
-        // this.purchases.push(this.mapRow(data[0])); //TODO:
-        showMessage('材料が登録されました。', 'success');
+        // --- ③ 登録データ取得 --
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select(
+            `
+          id, 
+          name,
+          description, 
+          genre,
+          reference_url,
+          dish_type,
+          recipe_ingredients  (
+            id, 
+            quantity,
+            ingredients (
+              id,
+              name,
+              unit
+            )
+          )
+          `
+          )
+          .eq('id', recipeId)
+          .single();
+
+        if (error) throw error;
+
+        this.recipes.push(this.mapRow(data));
+        showMessage('レシピが登録されました。', 'success');
       } catch (error) {
         console.error('Error:', error);
-        showMessage('材料の登録に失敗しました。', 'error');
+        showMessage('レシピの登録に失敗しました。', 'error');
         return null;
       }
     },
     async editRecipe(editItem: any) {
-      // console.log(editItem);
-      // const recipeId = editItem.id;
-
-      // axios
-      //   .patch(`/recipes/${recipeId}`, editItem)
-      //   .then((response: any) => {
-      //     const updateRecipe = this.getById(recipeId);
-      //     Object.assign(updateRecipe, response.data.recipe);
-
-      //     showMessage('レシピが更新されました。', 'success');
-      //   })
-      //   .catch((error: any) => {
-      //     console.error('Error:', error);
-      //     showMessage('レシピの更新に失敗しました。', 'error');
-      //   });
-
       try {
         const recipeId = editItem.id;
-        const { error } = await supabase
+
+        // --- ① レシピを更新 --
+        const { error: recipeError } = await supabase
           .from(TABLE_NAME)
           .update({
             name: editItem.name,
@@ -129,15 +137,60 @@ export const useRecipesStore = defineStore('recipes', {
           })
           .eq('id', recipeId);
 
+        if (recipeError) throw recipeError;
+
+        // --- ② レシピ材料を一旦削除 ---
+        await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).delete().eq('recipe_id', recipeId);
+
+        // --- ③ レシピ追加 --
+        if (editItem.ingredients.length >= 0) {
+          // レシピ材料テーブル追加
+          const payload = editItem.ingredients.map((ri: any) => ({
+            recipe_id: recipeId,
+            ingredient_id: ri.id,
+            quantity: ri.quantity
+          }));
+
+          const { error: ingredientsError } = await supabase
+            .from(RECIPE_INGREDIENTS_TABLE_NAME)
+            .insert(payload);
+
+          if (ingredientsError) throw ingredientsError;
+        }
+
+        // --- ④ 更新データ取得 --
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select(
+            `
+          id, 
+          name,
+          description, 
+          genre,
+          reference_url,
+          dish_type,
+          recipe_ingredients  (
+            id, 
+            quantity,
+            ingredients (
+              id,
+              name,
+              unit
+            )
+          )
+          `
+          )
+          .eq('id', recipeId)
+          .single();
+
         if (error) throw error;
 
         // ローカルキャッシュを更新
         const updateBalance = this.getById(recipeId);
 
-        Object.assign(updateBalance, editItem);
+        Object.assign(updateBalance, this.mapRow(data));
 
         showMessage('レシピが更新されました。', 'success');
-        return editItem;
       } catch (error: any) {
         console.error('Error:', error);
         showMessage('レシピの更新に失敗しました。', 'error');
@@ -169,7 +222,7 @@ export const useRecipesStore = defineStore('recipes', {
         type: row.dish_type,
 
         ingredients: row.recipe_ingredients.map((ri: any) => ({
-          id: ri.id,
+          id: ri.ingredients.id,
           quantity: ri.quantity,
           name: ri.ingredients.name,
           unit: ri.ingredients.unit

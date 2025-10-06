@@ -57,11 +57,12 @@ export const useIngredientsStore = defineStore('ingredients', {
               unit: addItem.unit
             }
           ])
-          .select();
+          .select()
+          .single();
 
         if (error) throw error;
 
-        this.ingredients.push(data[0]);
+        this.ingredients.push(data);
         showMessage('材料が登録されました。', 'success');
       } catch (error) {
         console.error('Error:', error);

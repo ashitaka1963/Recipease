@@ -52,13 +52,17 @@ export const usePurchasesStore = defineStore('purchases', {
 
     async addPurchase(addItem: any) {
       try {
-        const { data, error } = await supabase.from(TABLE_NAME).insert([
-          {
-            ingredient_id: addItem.ingredientId,
-            quantity: addItem.quantity,
-            is_purchased: addItem.isPurchased
-          }
-        ]).select(`
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .insert([
+            {
+              ingredient_id: addItem.ingredientId,
+              quantity: addItem.quantity,
+              is_purchased: addItem.isPurchased
+            }
+          ])
+          .select(
+            `
             id, 
             quantity, 
             is_purchased,
@@ -71,11 +75,12 @@ export const usePurchasesStore = defineStore('purchases', {
                 name
               )
             )
-            `);
-
+            `
+          )
+          .single();
         if (error) throw error;
 
-        this.purchases.push(this.mapRow(data[0])); //TODO:
+        this.purchases.push(this.mapRow(data));
         showMessage('材料が登録されました。', 'success');
       } catch (error) {
         console.error('Error:', error);
@@ -92,7 +97,9 @@ export const usePurchasesStore = defineStore('purchases', {
             ingredient_id: editItem.ingredientId,
             quantity: editItem.quantity
           })
-          .eq('id', purchaseId).select(`
+          .eq('id', purchaseId)
+          .select(
+            `
             id, 
             quantity, 
             is_purchased,
@@ -105,7 +112,9 @@ export const usePurchasesStore = defineStore('purchases', {
                 name
               )
             )
-            `);
+            `
+          )
+          .single();
         console.log(data);
 
         if (error) throw error;
@@ -113,7 +122,7 @@ export const usePurchasesStore = defineStore('purchases', {
         // ローカルキャッシュを更新
         const updateBalance = this.getById(purchaseId);
 
-        Object.assign(updateBalance, this.mapRow(data[0]));
+        Object.assign(updateBalance, this.mapRow(data));
 
         showMessage('材料が更新されました。', 'success');
         return editItem;
