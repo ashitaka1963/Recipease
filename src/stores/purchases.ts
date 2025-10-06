@@ -52,59 +52,68 @@ export const usePurchasesStore = defineStore('purchases', {
 
     async addPurchase(addItem: any) {
       try {
-        const { data, error } = await supabase
-          .from(TABLE_NAME)
-          .insert([
-            {
-              ingredient_id: addItem.ingredientId,
-              quantity: addItem.quantity,
-              is_purchased: addItem.isPurchased
-            }
-          ])
-          .select();
+        const { data, error } = await supabase.from(TABLE_NAME).insert([
+          {
+            ingredient_id: addItem.ingredientId,
+            quantity: addItem.quantity,
+            is_purchased: addItem.isPurchased
+          }
+        ]).select(`
+            id, 
+            quantity, 
+            is_purchased,
+            ingredients (
+              id, 
+              name, 
+              unit,
+              ingredient_categories (
+                id,
+                name
+              )
+            )
+            `);
 
         if (error) throw error;
 
-        // console.log(addItem);
-        // console.log(this.mapRow(data[0]));
-
-        this.purchases.push(addItem);
-        // this.purchases.push(this.mapRow(data[0])); //TODO:
+        this.purchases.push(this.mapRow(data[0])); //TODO:
         showMessage('材料が登録されました。', 'success');
       } catch (error) {
         console.error('Error:', error);
         showMessage('材料の登録に失敗しました。', 'error');
         return null;
       }
-
-      // axios
-      //   .post('/purchases', addItem)
-      //   .then((response: any) => {
-      //     this.purchases.push(response.data.purchase);
-      //     showMessage('買い物リストが登録されました。', 'success');
-      //   })
-      //   .catch((error: any) => {
-      //     console.error('Error:', error);
-      //     showMessage('買い物リストの登録に失敗しました。', 'error');
-      //   });
     },
     async editPurchase(editItem: any) {
       try {
         const purchaseId = editItem.id;
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from(TABLE_NAME)
           .update({
             ingredient_id: editItem.ingredientId,
             quantity: editItem.quantity
           })
-          .eq('id', purchaseId);
+          .eq('id', purchaseId).select(`
+            id, 
+            quantity, 
+            is_purchased,
+            ingredients (
+              id, 
+              name, 
+              unit,
+              ingredient_categories (
+                id,
+                name
+              )
+            )
+            `);
+        console.log(data);
 
         if (error) throw error;
 
         // ローカルキャッシュを更新
         const updateBalance = this.getById(purchaseId);
 
-        Object.assign(updateBalance, editItem);
+        Object.assign(updateBalance, this.mapRow(data[0]));
 
         showMessage('材料が更新されました。', 'success');
         return editItem;

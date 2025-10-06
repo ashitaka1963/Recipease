@@ -143,6 +143,30 @@ const unpurchasedItems = computed(() =>
     .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
 );
 
+// グループ化処理
+const groupedOptions = computed(() =>
+  Object.values(
+    ingredientsStore.ingredients.reduce(
+      (acc: any, cur: any) => {
+        const categoryId = cur.categoryId;
+        if (!acc[categoryId]) {
+          acc[categoryId] = {
+            label: cur.categoryName ?? '未分類',
+            options: []
+          };
+        }
+
+        acc[categoryId].options.push({
+          value: cur.id,
+          label: cur.name
+        });
+
+        return acc;
+      },
+      {} as Record<number, { label: string; options: { value: number; label: string }[] }>
+    )
+  )
+);
 // const purchaseItems = computed((): any => {
 //   // return purchasesStore.purchases;
 
@@ -385,14 +409,20 @@ function onCancelButtonClick() {
           <el-input v-model="form.ingredientId" />
         </el-form-item> -->
 
-        <el-form-item label="名前" prop="name">
+        <el-form-item label="材料" prop="name">
           <el-select v-model="form.ingredientId" placeholder="Select">
-            <el-option
-              v-for="item in ingredientsStore.ingredients"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
+            <el-option-group
+              v-for="group in groupedOptions"
+              :key="group.label"
+              :label="group.label"
+            >
+              <el-option
+                v-for="item in group.options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-option-group>
           </el-select>
         </el-form-item>
 

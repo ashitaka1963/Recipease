@@ -23,11 +23,21 @@ export const useIngredientsStore = defineStore('ingredients', {
         // すでにデータがあるなら何もしない
         if (this.ingredients.length > 0) return;
 
-        const { data, error } = await supabase.from(TABLE_NAME).select();
+        const { data, error } = await supabase.from(TABLE_NAME).select(`
+          id,
+          name,
+          category_id,
+          unit,
+          ingredient_categories (
+            id,
+            name
+          )
+        `);
 
         if (error) throw error;
 
-        this.ingredients = data;
+        // this.ingredients = data;
+        this.ingredients = data.map(this.mapRow);
         // this.balances.sort((a: any, b: any) => dayjs(b.balance_date).diff(dayjs(a.balance_date)));
         // showMessage('材料を取得しました。', 'success');
       } catch (error) {
@@ -100,6 +110,15 @@ export const useIngredientsStore = defineStore('ingredients', {
         console.error('Error:', error);
         showMessage('材料の削除に失敗しました。', 'error');
       }
+    },
+    mapRow(row: any) {
+      return {
+        id: row.id,
+        name: row.name,
+        categoryId: row.category_id,
+        categoryName: row.ingredient_categories.name,
+        unit: row.unit
+      };
     }
   }
 });
