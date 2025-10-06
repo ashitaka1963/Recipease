@@ -144,7 +144,7 @@ const unpurchasedItems = computed(() =>
 );
 
 // グループ化処理
-const groupedOptions = computed(() =>
+const groupedOptions = computed<any[]>(() =>
   Object.values(
     ingredientsStore.ingredients.reduce(
       (acc: any, cur: any) => {
