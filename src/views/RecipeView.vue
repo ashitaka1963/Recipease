@@ -243,6 +243,7 @@ async function deleteRecipe(recipeId: string) {
 
 async function saveRecipe() {
   loadingUtils.startLoading();
+  form.ingredients = form.ingredients.filter((item) => item.id !== '' && item.id != null);
 
   if (isEdit.value) {
     await recipesStore.editRecipe({ ...form });
