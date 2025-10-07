@@ -5,11 +5,12 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { Search, Delete, Edit, Link } from '@element-plus/icons-vue';
+import { Search, Delete, Edit, Link, ShoppingCart } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 
 import { useRecipesStore } from '@/stores/recipes';
 import { useIngredientsStore } from '@/stores/ingredients';
+import { usePurchasesStore } from '@/stores/purchases';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
@@ -18,12 +19,15 @@ import loadingUtils from '../CustomLoading';
 const router = useRouter();
 const recipesStore = useRecipesStore();
 const ingredientsStore = useIngredientsStore();
+const purchasesStore = usePurchasesStore();
 
 const ruleFormRef = ref<FormInstance>();
 const isDialogVisible = ref(false);
 const isConfirmDialogVisible = ref(false);
+const isAddToShoppingListDialogVisible = ref(false);
 const deleteRecipeId = ref('');
 const deleteRecipeName = ref('');
+const addIngredients = ref([]);
 const isEdit = ref(true);
 
 const typeOptions = [
@@ -241,6 +245,14 @@ async function deleteRecipe(recipeId: string) {
   loadingUtils.closeLoading();
 }
 
+async function addToShoppingList(addIngredients: any) {
+  loadingUtils.startLoading();
+
+  await purchasesStore.addPurchases(addIngredients);
+
+  loadingUtils.closeLoading();
+}
+
 async function saveRecipe() {
   loadingUtils.startLoading();
   form.ingredients = form.ingredients.filter((item) => item.id !== '' && item.id != null);
@@ -257,8 +269,6 @@ async function saveRecipe() {
 
 function addIngredient() {
   form.ingredients.push({ id: '' });
-
-  console.log(form.ingredients);
 }
 
 async function submitForm() {
@@ -297,6 +307,17 @@ function onCancelButtonClick() {
   deleteRecipeId.value = '';
 }
 
+function onAddToShoppingListDialogConfirmButtonClick() {
+  addToShoppingList(addIngredients.value);
+  onCAddToShoppingListDialogancelButtonClick();
+}
+
+function onCAddToShoppingListDialogancelButtonClick() {
+  isAddToShoppingListDialogVisible.value = false;
+
+  addIngredients.value = [];
+}
+
 function selectedType(options: any, name: string) {
   const category = options.find((categories: any) => categories.label === name);
   return category ? category.type : '';
@@ -331,6 +352,19 @@ function selectedType(options: any, name: string) {
               <template #default="scope">
                 <!-- TODO: 調味料省く -->
                 {{ scope.row.ingredients.map((i: any) => i.name).join(', ') }}
+
+                <template v-if="scope.row.ingredients.length > 0">
+                  <el-button
+                    class="sub-icon-button"
+                    :icon="ShoppingCart"
+                    text
+                    style="padding-left: 0px; padding-right: 0px"
+                    @click="
+                      isAddToShoppingListDialogVisible = true;
+                      addIngredients = scope.row.ingredients;
+                    "
+                  ></el-button>
+                </template>
               </template>
             </el-table-column>
             <el-table-column prop="type" label="タイプ">
@@ -360,6 +394,7 @@ function selectedType(options: any, name: string) {
                   :icon="Search"
                   circle
                 ></el-button> -->
+
                 <el-button
                   class="main-icon-button"
                   @click="editDialogOpen(scope.row.id)"
@@ -458,6 +493,14 @@ function selectedType(options: any, name: string) {
       :message="`レシピ(${deleteRecipeName})を削除しますか？`"
       @clickConfirmed="onConfirmButtonClick"
       @clickCanceled="onCancelButtonClick"
+    />
+
+    <ConfirmDialog
+      :isDialogVisible="isAddToShoppingListDialogVisible"
+      :message="`買い物リストに材料追加しますか？`"
+      :confirmedButtonName="`追加`"
+      @clickConfirmed="onAddToShoppingListDialogConfirmButtonClick"
+      @clickCanceled="onCAddToShoppingListDialogancelButtonClick"
     />
   </main>
 </template>

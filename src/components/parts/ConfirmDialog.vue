@@ -3,6 +3,7 @@ import { computed } from 'vue';
 interface Props {
   isDialogVisible: boolean;
   message: string;
+  confirmedButtonName: string;
 }
 
 interface Emits {
@@ -10,7 +11,10 @@ interface Emits {
   (event: 'clickCanceled'): void;
 }
 
-const props = defineProps<Props>();
+// const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  confirmedButtonName: '削除' // ← デフォルト値をここで設定
+});
 
 const emit = defineEmits<Emits>();
 
@@ -40,7 +44,7 @@ const onCancelButtonClick = (): void => {
       <span class="dialog-footer">
         <el-button type="info" @click="onCancelButtonClick">中止</el-button>
         <el-button class="main-button" color="#ff8e3c" @click="onConfirmedButtonClick">
-          削除
+          {{ props.confirmedButtonName }}
         </el-button>
       </span>
     </template>

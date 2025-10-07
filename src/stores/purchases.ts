@@ -81,10 +81,49 @@ export const usePurchasesStore = defineStore('purchases', {
         if (error) throw error;
 
         this.purchases.push(this.mapRow(data));
-        showMessage('材料が登録されました。', 'success');
+        showMessage('買い物リストに追加されました。', 'success');
       } catch (error) {
         console.error('Error:', error);
-        showMessage('材料の登録に失敗しました。', 'error');
+        showMessage('買い物リストの追加に失敗しました。', 'error');
+        return null;
+      }
+    },
+    async addPurchases(addItems: any) {
+      try {
+        const payload = addItems.map((ingredient: any) => ({
+          ingredient_id: ingredient.id,
+          quantity: ingredient.quantity,
+          is_purchased: false
+        }));
+
+        console.log(payload);
+
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .insert(payload)
+          .select(
+            `
+            id, 
+            quantity, 
+            is_purchased,
+            ingredients (
+              id, 
+              name, 
+              unit,
+              ingredient_categories (
+                id,
+                name
+              )
+            )
+            `
+          );
+        if (error) throw error;
+
+        this.purchases.push(...data.map(this.mapRow));
+        showMessage('買い物リストに追加されました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('買い物リストの追加に失敗しました。', 'error');
         return null;
       }
     },
@@ -187,6 +226,7 @@ export const usePurchasesStore = defineStore('purchases', {
       //   });
     },
     mapRow(row: any) {
+      console.log(row);
       return {
         id: row.id,
         quantity: row.quantity,
