@@ -424,7 +424,7 @@ function selectedType(options: any, name: string) {
           <div
             v-for="(ingredient, index) in form.ingredients"
             :key="index"
-            class="mb-2 flex gap-2 items-center"
+            style="margin-bottom: 10px"
           >
             <el-select v-model="ingredient.id" placeholder="材料を選択">
               <el-option-group
@@ -440,6 +440,7 @@ function selectedType(options: any, name: string) {
                 />
               </el-option-group>
             </el-select>
+            <el-input v-model="ingredient.quantity" placeholder="分量を入力" />
           </div>
           <el-button class="main-button" color="#ff8e3c" @click="addIngredient"> +</el-button>
         </el-form-item>
