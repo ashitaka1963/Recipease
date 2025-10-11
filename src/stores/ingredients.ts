@@ -36,10 +36,7 @@ export const useIngredientsStore = defineStore('ingredients', {
 
         if (error) throw error;
 
-        // this.ingredients = data;
         this.ingredients = data.map(this.mapRow);
-        // this.balances.sort((a: any, b: any) => dayjs(b.balance_date).diff(dayjs(a.balance_date)));
-        // showMessage('材料を取得しました。', 'success');
       } catch (error) {
         console.error('Error:', error);
         showMessage('材料の取得に失敗しました。', 'error');
@@ -57,12 +54,23 @@ export const useIngredientsStore = defineStore('ingredients', {
               unit: addItem.unit
             }
           ])
-          .select()
+          .select(
+            `
+          id,
+          name,
+          category_id,
+          unit,
+          ingredient_categories (
+            id,
+            name
+          )
+        `
+          )
           .single();
 
         if (error) throw error;
 
-        this.ingredients.push(data);
+        this.ingredients.push(this.mapRow(data));
         showMessage('材料が登録されました。', 'success');
       } catch (error) {
         console.error('Error:', error);
@@ -73,21 +81,34 @@ export const useIngredientsStore = defineStore('ingredients', {
     async editIngredient(editItem: any) {
       try {
         const ingredientId = editItem.id;
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from(TABLE_NAME)
           .update({
             name: editItem.name,
             category_id: editItem.categoryId,
             unit: editItem.unit
           })
-          .eq('id', ingredientId);
+          .eq('id', ingredientId)
+          .select(
+            `
+          id,
+          name,
+          category_id,
+          unit,
+          ingredient_categories (
+            id,
+            name
+          )
+        `
+          )
+          .single();
 
         if (error) throw error;
 
         // ローカルキャッシュを更新
         const updateBalance = this.getById(ingredientId);
 
-        Object.assign(updateBalance, { ...editItem, category_id: editItem.categoryId });
+        Object.assign(updateBalance, this.mapRow(data));
 
         showMessage('材料が更新されました。', 'success');
         return editItem;

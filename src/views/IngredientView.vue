@@ -113,6 +113,9 @@ const dialogButtonName = computed((): any => {
   return isEdit.value ? '更新' : '追加';
 });
 
+const ingredients = computed(() => {
+  return [...ingredientsStore.ingredients].sort((a, b) => a.categoryId - b.categoryId);
+});
 // ========================================
 // Methods
 // ========================================
@@ -134,7 +137,7 @@ function editDialogOpen(ingredientId: string) {
 
   const ingredient = ingredientsStore.getById(ingredientId);
 
-  Object.assign(form, { ...ingredient, categoryId: ingredient.category_id });
+  Object.assign(form, ingredient);
 }
 
 async function deleteIngredient(ingredientId: string) {
@@ -198,10 +201,10 @@ function selectedType(categoryId: string) {
   return category ? category.type : '';
 }
 
-function getCategoryName(categoryId: string) {
-  const category = categoryOptions.find((categories: any) => categories.id === categoryId);
-  return category ? category.label : '';
-}
+// function getCategoryName(categoryId: string) {
+//   const category = categoryOptions.find((categories: any) => categories.id === categoryId);
+//   return category ? category.label : '';
+// }
 </script>
 
 <template>
@@ -210,12 +213,12 @@ function getCategoryName(categoryId: string) {
     <div class="container">
       <el-row>
         <el-col :span="24">
-          <el-table :data="ingredientsStore.ingredients" style="width: 100%">
+          <el-table :data="ingredients" style="width: 100%">
             <el-table-column prop="name" label="名前" />
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag :type="selectedType(scope.row.category_id)">{{
-                  getCategoryName(scope.row.category_id)
+                <el-tag :type="selectedType(scope.row.categoryId)">{{
+                  scope.row.categoryName
                 }}</el-tag>
               </template>
             </el-table-column>
