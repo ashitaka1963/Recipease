@@ -1,13 +1,42 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 import TheSideMenu from './components/TheSideMenu.vue';
+
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+const drawer = ref(false);
+const isMobile = ref(window.innerWidth < 600);
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 600;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <template>
   <div class="common-layout">
     <el-container>
-      <el-aside class="side-menu" width="80px"><TheSideMenu /></el-aside>
-      <el-main><RouterView /></el-main>
+      <!-- <el-header>Header</el-header> -->
+
+      <el-container>
+        <el-aside v-if="!isMobile" class="side-menu" width="80px"><TheSideMenu /></el-aside>
+        <el-drawer v-else v-model="drawer" direction="ltr" :with-header="false" size="80px">
+          <TheSideMenu />
+        </el-drawer>
+
+        <el-main>
+          <div class="sub-nav">
+            <el-button type="primary" @click="drawer = true"> Menu </el-button>
+          </div>
+          <RouterView />
+        </el-main>
+      </el-container>
     </el-container>
   </div>
 </template>

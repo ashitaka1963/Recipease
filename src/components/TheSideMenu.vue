@@ -30,50 +30,58 @@ const menuClick = (key: string) => {
 </script>
 
 <template>
-  <el-menu default-active="1" collapse="false" @select="menuClick">
-    <!-- <el-menu-item index="1">
+  <div style="padding-left: 8px">
+    <el-menu default-active="1" collapse="false" @select="menuClick" class="responsive-menu">
+      <!-- <el-menu-item index="1">
       <el-icon :size="50"><icon-menu /></el-icon>
       <template #title>Dashboard</template>
     </el-menu-item> -->
-    <!-- <el-menu-item index="5">
+      <!-- <el-menu-item index="5">
       <el-icon :size="50"><Calendar /></el-icon>
       <template #title>献立</template>
     </el-menu-item> -->
-    <el-menu-item index="4">
-      <el-icon :size="50"><ShoppingCart /></el-icon>
-      <template #title>買い物リスト</template>
-    </el-menu-item>
-    <el-menu-item index="6">
-      <el-icon :size="50"><ForkSpoon /></el-icon>
-      <template #title>レシピ</template>
-    </el-menu-item>
-    <el-menu-item index="3">
-      <el-icon :size="50"><Apple /></el-icon>
-      <template #title>材料</template>
-    </el-menu-item>
-    <!-- <el-menu-item index="7">
+      <el-menu-item index="4">
+        <el-icon :size="50"><ShoppingCart /></el-icon>
+        <template #title>買い物リスト</template>
+      </el-menu-item>
+      <el-menu-item index="6">
+        <el-icon :size="50"><ForkSpoon /></el-icon>
+        <template #title>レシピ</template>
+      </el-menu-item>
+      <el-menu-item index="3">
+        <el-icon :size="50"><Apple /></el-icon>
+        <template #title>材料</template>
+      </el-menu-item>
+      <!-- <el-menu-item index="7">
       <el-icon :size="50"><UploadFilled /></el-icon>
       <template #title>一括登録</template>
     </el-menu-item> -->
 
-    <!-- <el-menu-item index="2">
+      <!-- <el-menu-item index="2">
       <el-icon :size="50"><user /></el-icon>
       <template #title>User</template>
     </el-menu-item> -->
-  </el-menu>
+    </el-menu>
+  </div>
 </template>
 <style>
-.el-menu {
+/* .el-menu {
   border-right: none;
   margin: 0 auto;
 }
 
 .el-menu-item i {
   color: #3e4451;
-}
+} */
 
-/* .el-menu-item.is-active {
+.el-menu-item.is-active {
   color: #c7a780;
   background-color: #30343d;
-} */
+}
+</style>
+
+<style scoped>
+.responsive-menu {
+  border-right: none;
+}
 </style>
