@@ -461,7 +461,7 @@ function selectedType(options: any, name: string) {
             :key="index"
             style="margin-bottom: 10px"
           >
-            <el-select v-model="ingredient.id" placeholder="材料を選択">
+            <el-select v-model="ingredient.id" placeholder="材料を選択" filterable>
               <el-option-group
                 v-for="group in groupedOptions"
                 :key="group.label"

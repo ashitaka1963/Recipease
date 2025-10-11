@@ -410,7 +410,7 @@ function onCancelButtonClick() {
         </el-form-item> -->
 
         <el-form-item label="材料" prop="name">
-          <el-select v-model="form.ingredientId" placeholder="Select">
+          <el-select v-model="form.ingredientId" placeholder="材料を選択" filterable>
             <el-option-group
               v-for="group in groupedOptions"
               :key="group.label"
