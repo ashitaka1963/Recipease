@@ -64,21 +64,6 @@ const menuClick = (key: string) => {
     </el-menu>
   </div>
 </template>
-<style>
-/* .el-menu {
-  border-right: none;
-  margin: 0 auto;
-}
-
-.el-menu-item i {
-  color: #3e4451;
-} */
-
-.el-menu-item.is-active {
-  color: #c7a780;
-  background-color: #30343d;
-}
-</style>
 
 <style scoped>
 .responsive-menu {
