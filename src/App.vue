@@ -3,6 +3,8 @@ import { RouterView } from 'vue-router';
 import TheSideMenu from './components/TheSideMenu.vue';
 
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { Expand } from '@element-plus/icons-vue';
+
 const drawer = ref(false);
 const isMobile = ref(window.innerWidth < 600);
 
@@ -38,7 +40,7 @@ function onMenuClick() {
 
         <el-main>
           <div class="sub-nav">
-            <el-button type="primary" @click="drawer = true"> Menu </el-button>
+            <el-button type="primary" text :icon="Expand" @click="drawer = true"> Menu </el-button>
           </div>
           <RouterView />
         </el-main>
