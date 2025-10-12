@@ -17,6 +17,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
 });
+
+function onMenuClick() {
+  drawer.value = false;
+}
 </script>
 
 <template>
@@ -25,9 +29,11 @@ onBeforeUnmount(() => {
       <!-- <el-header>Header</el-header> -->
 
       <el-container>
-        <el-aside v-if="!isMobile" class="side-menu" width="80px"><TheSideMenu /></el-aside>
+        <el-aside v-if="!isMobile" class="side-menu" width="80px">
+          <TheSideMenu @menuClick="onMenuClick"
+        /></el-aside>
         <el-drawer v-else v-model="drawer" direction="ltr" :with-header="false" size="80px">
-          <TheSideMenu />
+          <TheSideMenu @menuClick="onMenuClick" />
         </el-drawer>
 
         <el-main>

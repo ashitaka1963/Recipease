@@ -12,6 +12,10 @@ import {
   UploadFilled
 } from '@element-plus/icons-vue';
 
+interface Emits {
+  (event: 'menuClick'): void;
+}
+
 const router = useRouter();
 
 const routeMap = new Map([
@@ -24,7 +28,11 @@ const routeMap = new Map([
   ['4', 'PurchaseView']
 ]);
 
+// const emit = defineEmits(['menu-click']);
+const emit = defineEmits<Emits>();
+
 const menuClick = (key: string) => {
+  emit('menuClick');
   router.push({ name: routeMap.get(key) });
 };
 </script>
