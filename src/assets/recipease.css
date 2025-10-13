@@ -1,23 +1,26 @@
-/* 画面幅が600px以下（スマホ）の場合 */
-/* @media (max-width: 600px) {
-  .container {
-    padding: 108px;
-  }
-} */
-
-/* @media screen and (max-width: 600px) {
-  .side-menu {
-    display: none !important;
-  }
-} */
-
 .el-drawer__body {
   padding: 0px !important;
 }
 
-@media screen and (min-width: 600px) {
+/* スマホ */
+.responsive-dialog {
+  width: 90% !important;
+}
+
+/* タブレット */
+@media screen and (min-width: 768px) {
   .sub-nav {
     display: none !important;
+  }
+  .responsive-dialog {
+    width: 50% !important;
+  }
+}
+
+/* デスクトップ */
+@media screen and (min-width: 1024px) {
+  .responsive-dialog {
+    width: 40% !important;
   }
 }
 

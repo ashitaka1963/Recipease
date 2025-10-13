@@ -303,7 +303,7 @@ function onCancelButtonClick() {
       <!-- 買い物リスト -->
       <el-row>
         <el-col :span="24">
-          <el-table :data="purchasedItems" style="width: 80%">
+          <el-table :data="purchasedItems" style="width: 100%">
             <el-table-column width="55">
               <template #default="scope">
                 <el-checkbox
@@ -400,7 +400,7 @@ function onCancelButtonClick() {
     <el-dialog
       v-model="isDialogVisible"
       :title="dialogTitle"
-      width="30%"
+      class="responsive-dialog"
       align-center
       :before-close="cancelForm"
     >

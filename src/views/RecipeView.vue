@@ -422,7 +422,7 @@ function selectedType(options: any, name: string) {
     <el-dialog
       v-model="isDialogVisible"
       :title="dialogTitle"
-      width="30%"
+      class="responsive-dialog"
       align-center
       :before-close="cancelForm"
     >

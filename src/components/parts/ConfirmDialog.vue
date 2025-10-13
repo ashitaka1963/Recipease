@@ -35,7 +35,7 @@ const onCancelButtonClick = (): void => {
   <el-dialog
     v-model="isDialogVisible"
     title="Warning"
-    width="30%"
+    class="responsive-dialog"
     align-center
     :before-close="onCancelButtonClick"
   >
