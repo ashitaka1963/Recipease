@@ -266,6 +266,7 @@ function selectedType(categoryId: string) {
       class="responsive-dialog"
       align-center
       :before-close="cancelForm"
+      append-to-body="false"
     >
       <el-form ref="ruleFormRef" :model="form" :rules="rules" label-width="80px" status-icon>
         <el-form-item label="名前" prop="name">
