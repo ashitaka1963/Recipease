@@ -43,7 +43,7 @@ export const useRecipesStore = defineStore('recipes', {
 
         this.recipes = data.map(this.mapRow);
 
-        showMessage('レシピリストを取得しました。', 'success');
+        // showMessage('レシピリストを取得しました。', 'success');
       } catch (error) {
         console.error('Error:', error);
         showMessage('レシピリストの取得に失敗しました。', 'error');

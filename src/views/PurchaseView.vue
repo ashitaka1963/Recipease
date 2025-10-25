@@ -21,52 +21,6 @@ const deletePurchaseId = ref('');
 const deletePurchaseName = ref('');
 const isEdit = ref(true);
 
-// TODO: tagのtype
-const categoryOptions = [
-  {
-    value: '野菜類',
-    label: '野菜類',
-    type: 'success',
-    sortOrder: 1
-  },
-  {
-    value: '肉類',
-    label: '肉類',
-    type: 'danger',
-    sortOrder: 5
-  },
-  {
-    value: '魚',
-    label: '魚',
-    type: '',
-    sortOrder: 4
-  },
-  {
-    value: '卵・乳製品',
-    label: '卵・乳製品',
-    type: 'yellow',
-    sortOrder: 3
-  },
-  {
-    value: '穀物',
-    label: '穀物',
-    type: 'yellow',
-    sortOrder: 6
-  },
-  {
-    value: '果物',
-    label: '果物',
-    type: 'warning',
-    sortOrder: 2
-  },
-  {
-    value: '調味料',
-    label: '調味料',
-    type: 'info',
-    sortOrder: 7
-  }
-];
-
 const target = ref('nextWeek');
 const purchased = ref<any>(null);
 // const startDate = ref<any>(null);
@@ -239,11 +193,6 @@ async function deletePurchase(ingredientId: string) {
   loadingUtils.closeLoading();
 }
 
-function selectedType(name: string) {
-  const category = categoryOptions.find((categories: any) => categories.label === name);
-  return category ? category.type : '';
-}
-
 const moveToPurchased = (purchaseId: number, isPurchased: boolean) => {
   purchasesStore.changeIsPurchased(purchaseId, !isPurchased);
 };
@@ -314,9 +263,14 @@ function onCancelButtonClick() {
             </el-table-column>
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag :type="selectedType(scope.row.ingredientCategoryName)">{{
-                  scope.row.ingredientCategoryName
-                }}</el-tag>
+                <el-tag
+                  :style="{
+                    backgroundColor: scope.row.ingredientCategorBackgroundColor,
+                    color: scope.row.ingredientCategorTextColor,
+                    borderColor: scope.row.ingredientCategorTextColor
+                  }"
+                  >{{ scope.row.ingredientCategoryName }}</el-tag
+                >
               </template>
             </el-table-column>
             <el-table-column prop="ingredientName" label="材料" />
@@ -377,9 +331,14 @@ function onCancelButtonClick() {
                 </el-table-column>
                 <el-table-column prop="category" label="カテゴリ">
                   <template #default="scope">
-                    <el-tag :type="selectedType(scope.row.ingredientCategoryName)">{{
-                      scope.row.ingredientCategoryName
-                    }}</el-tag>
+                    <el-tag
+                      :style="{
+                        backgroundColor: scope.row.ingredientCategorBackgroundColor,
+                        color: scope.row.ingredientCategorTextColor,
+                        borderColor: scope.row.ingredientCategorTextColor
+                      }"
+                      >{{ scope.row.ingredientCategoryName }}</el-tag
+                    >
                   </template>
                 </el-table-column>
                 <el-table-column prop="ingredientName" label="材料" />

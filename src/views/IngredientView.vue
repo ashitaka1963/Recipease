@@ -5,12 +5,14 @@ import { Delete, Edit } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 
 import { useIngredientsStore } from '@/stores/ingredients';
+import { useIngredientCategoriesStore } from '@/stores/ingredientCategories';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
 import loadingUtils from '../CustomLoading';
 
 const ingredientsStore = useIngredientsStore();
+const ingredientCategoriesStore = useIngredientCategoriesStore();
 
 const ruleFormRef = ref<FormInstance>();
 const isDialogVisible = ref(false);
@@ -54,51 +56,6 @@ const rules = reactive<FormRules<Ingredient>>({
   ]
 });
 
-const categoryOptions = [
-  {
-    id: 1,
-    value: '野菜',
-    label: '野菜',
-    type: 'success'
-  },
-  {
-    id: 2,
-    value: '肉',
-    label: '肉',
-    type: 'danger'
-  },
-  {
-    id: 3,
-    value: '魚',
-    label: '魚',
-    type: ''
-  },
-  {
-    id: 4,
-    value: '卵・乳製品',
-    label: '卵・乳製品',
-    type: 'yellow'
-  },
-  {
-    id: 5,
-    value: '穀物',
-    label: '穀物',
-    type: 'yellow'
-  },
-  {
-    id: 6,
-    value: '果物',
-    label: '果物',
-    type: 'warning'
-  },
-  {
-    id: 7,
-    value: '調味料',
-    label: '調味料',
-    type: 'info'
-  }
-];
-
 init();
 
 // ========================================
@@ -116,12 +73,18 @@ const dialogButtonName = computed((): any => {
 const ingredients = computed(() => {
   return [...ingredientsStore.ingredients].sort((a, b) => a.categoryId - b.categoryId);
 });
+
+const ingredientCategories = computed(() => {
+  return [...ingredientCategoriesStore.ingredientCategories].sort((a, b) => a.id - b.id);
+});
+
 // ========================================
 // Methods
 // ========================================
 async function init() {
   loadingUtils.startLoading();
 
+  await getIngredientCategoriesStore();
   await getIngredients();
 
   loadingUtils.closeLoading();
@@ -129,6 +92,10 @@ async function init() {
 
 function getIngredients() {
   ingredientsStore.fetchIngredients();
+}
+
+function getIngredientCategoriesStore() {
+  ingredientCategoriesStore.fetchIngredientCategories();
 }
 
 function editDialogOpen(ingredientId: string) {
@@ -195,16 +162,6 @@ function onCancelButtonClick() {
   deleteIngredientName.value = '';
   deleteIngredientId.value = '';
 }
-
-function selectedType(categoryId: string) {
-  const category = categoryOptions.find((categories: any) => categories.id === categoryId);
-  return category ? category.type : '';
-}
-
-// function getCategoryName(categoryId: string) {
-//   const category = categoryOptions.find((categories: any) => categories.id === categoryId);
-//   return category ? category.label : '';
-// }
 </script>
 
 <template>
@@ -215,11 +172,17 @@ function selectedType(categoryId: string) {
         <el-col :span="24">
           <el-table :data="ingredients" style="width: 100%">
             <el-table-column prop="name" label="名前" />
+
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag :type="selectedType(scope.row.categoryId)">{{
-                  scope.row.categoryName
-                }}</el-tag>
+                <el-tag
+                  :style="{
+                    backgroundColor: scope.row.backgroundColor,
+                    color: scope.row.textColor,
+                    borderColor: scope.row.textColor
+                  }"
+                  >{{ scope.row.categoryName }}</el-tag
+                >
               </template>
             </el-table-column>
             <el-table-column prop="unit" label="単位" />
@@ -275,9 +238,9 @@ function selectedType(categoryId: string) {
         <el-form-item label="カテゴリ" prop="categoryId">
           <el-select v-model="form.categoryId" placeholder="Select" @change="form.unit = ''">
             <el-option
-              v-for="item in categoryOptions"
+              v-for="item in ingredientCategories"
               :key="item.id"
-              :label="item.label"
+              :label="item.name"
               :value="item.id"
             />
           </el-select>

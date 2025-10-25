@@ -30,7 +30,9 @@ export const useIngredientsStore = defineStore('ingredients', {
           unit,
           ingredient_categories (
             id,
-            name
+            name,
+            background_color,
+            text_color
           )
         `);
 
@@ -62,7 +64,9 @@ export const useIngredientsStore = defineStore('ingredients', {
           unit,
           ingredient_categories (
             id,
-            name
+            name,
+            background_color,
+            text_color
           )
         `
           )
@@ -97,7 +101,9 @@ export const useIngredientsStore = defineStore('ingredients', {
           unit,
           ingredient_categories (
             id,
-            name
+            name,
+            background_color,
+            text_color
           )
         `
           )
@@ -139,6 +145,8 @@ export const useIngredientsStore = defineStore('ingredients', {
         name: row.name,
         categoryId: row.category_id,
         categoryName: row.ingredient_categories.name,
+        backgroundColor: row.ingredient_categories.background_color,
+        textColor: row.ingredient_categories.text_color,
         unit: row.unit
       };
     }

@@ -32,7 +32,9 @@ export const usePurchasesStore = defineStore('purchases', {
               unit,
               ingredient_categories (
                 id,
-                name
+                name,
+                background_color,
+                text_color
               )
             )
             `);
@@ -43,7 +45,7 @@ export const usePurchasesStore = defineStore('purchases', {
 
         this.purchases = data.map(this.mapRow);
 
-        showMessage('買い物リストを取得しました。', 'success');
+        // showMessage('買い物リストを取得しました。', 'success');
       } catch (error) {
         console.error('Error:', error);
         showMessage('買い物リストの取得に失敗しました。', 'error');
@@ -72,7 +74,9 @@ export const usePurchasesStore = defineStore('purchases', {
               unit,
               ingredient_categories (
                 id,
-                name
+                name,
+                background_color,
+                text_color
               )
             )
             `
@@ -112,7 +116,9 @@ export const usePurchasesStore = defineStore('purchases', {
               unit,
               ingredient_categories (
                 id,
-                name
+                name,
+                background_color,
+                text_color
               )
             )
             `
@@ -148,7 +154,9 @@ export const usePurchasesStore = defineStore('purchases', {
               unit,
               ingredient_categories (
                 id,
-                name
+                name,
+                background_color,
+                text_color
               )
             )
             `
@@ -235,7 +243,9 @@ export const usePurchasesStore = defineStore('purchases', {
         ingredientName: row.ingredients.name,
         ingredientUnit: row.ingredients.unit,
         ingredientCategoryId: row.ingredients.ingredient_categories.id,
-        ingredientCategoryName: row.ingredients.ingredient_categories.name
+        ingredientCategoryName: row.ingredients.ingredient_categories.name,
+        ingredientCategorBackgroundColor: row.ingredients.ingredient_categories.background_color,
+        ingredientCategorTextColor: row.ingredients.ingredient_categories.text_color
       };
     }
   }
