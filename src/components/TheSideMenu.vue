@@ -39,7 +39,7 @@ const menuClick = (key: string) => {
 
 <template>
   <div style="padding-left: 8px">
-    <el-menu default-active="1" collapse="false" @select="menuClick" class="responsive-menu">
+    <el-menu default-active="1" :collapse="false" @select="menuClick" class="responsive-menu">
       <!-- <el-menu-item index="1">
       <el-icon :size="50"><icon-menu /></el-icon>
       <template #title>Dashboard</template>
@@ -50,7 +50,7 @@ const menuClick = (key: string) => {
     </el-menu-item> -->
       <el-menu-item index="4">
         <el-icon :size="50"><ShoppingCart /></el-icon>
-        <template #title>買い物リスト</template>
+        <template #title>買い物</template>
       </el-menu-item>
       <el-menu-item index="6">
         <el-icon :size="50"><ForkSpoon /></el-icon>

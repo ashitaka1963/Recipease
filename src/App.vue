@@ -31,10 +31,10 @@ function onMenuClick() {
       <!-- <el-header>Header</el-header> -->
 
       <el-container>
-        <el-aside v-if="!isMobile" class="side-menu" width="80px">
+        <el-aside v-if="!isMobile" class="side-menu" width="150px">
           <TheSideMenu @menuClick="onMenuClick"
         /></el-aside>
-        <el-drawer v-else v-model="drawer" direction="ltr" :with-header="false" size="80px">
+        <el-drawer v-else v-model="drawer" direction="ltr" :with-header="false" size="150px">
           <TheSideMenu @menuClick="onMenuClick" />
         </el-drawer>
 
