@@ -32,20 +32,23 @@ interface Purchase {
   ingredientId: number | null;
   quantity: number | null;
   isPurchased: boolean;
+  memo: string;
 }
 
 const form = reactive<Purchase>({
   id: '1',
   ingredientId: null,
   quantity: null,
-  isPurchased: false
+  isPurchased: false,
+  memo: ''
 });
 
 const defaultForm: Purchase = {
   id: null,
   ingredientId: null,
   quantity: null,
-  isPurchased: false
+  isPurchased: false,
+  memo: ''
 };
 
 const rules = reactive<FormRules<Purchase>>({
@@ -280,6 +283,7 @@ function onCancelButtonClick() {
                 {{ scope.row.ingredientUnit }}
               </template>
             </el-table-column>
+            <el-table-column prop="memo" label="メモ" />
             <el-table-column width="130">
               <template #header>
                 <el-button
@@ -348,10 +352,10 @@ function onCancelButtonClick() {
                     {{ scope.row.ingredientUnit }}
                   </template>
                 </el-table-column>
+                <el-table-column prop="memo" label="メモ" />
               </el-table>
-            </el-col>
-          </el-row></el-collapse-item
-        >
+            </el-col> </el-row
+        ></el-collapse-item>
       </el-collapse>
     </div>
 
@@ -387,6 +391,9 @@ function onCancelButtonClick() {
 
         <el-form-item label="分量" prop="quantity">
           <el-input v-model="form.quantity" />
+        </el-form-item>
+        <el-form-item label="メモ" prop="memo">
+          <el-input v-model="form.memo" type="textarea" />
         </el-form-item>
 
         <!-- 

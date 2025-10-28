@@ -26,6 +26,7 @@ export const usePurchasesStore = defineStore('purchases', {
             id, 
             quantity, 
             is_purchased,
+            memo,
             ingredients (
               id, 
               name, 
@@ -60,7 +61,8 @@ export const usePurchasesStore = defineStore('purchases', {
             {
               ingredient_id: addItem.ingredientId,
               quantity: addItem.quantity,
-              is_purchased: addItem.isPurchased
+              is_purchased: addItem.isPurchased,
+              memo: addItem.memo
             }
           ])
           .select(
@@ -68,6 +70,7 @@ export const usePurchasesStore = defineStore('purchases', {
             id, 
             quantity, 
             is_purchased,
+            memo,
             ingredients (
               id, 
               name, 
@@ -97,7 +100,8 @@ export const usePurchasesStore = defineStore('purchases', {
         const payload = addItems.map((ingredient: any) => ({
           ingredient_id: ingredient.id,
           quantity: ingredient.quantity,
-          is_purchased: false
+          is_purchased: false,
+          memo: ingredient.memo
         }));
 
         console.log(payload);
@@ -110,6 +114,7 @@ export const usePurchasesStore = defineStore('purchases', {
             id, 
             quantity, 
             is_purchased,
+            memo,
             ingredients (
               id, 
               name, 
@@ -140,7 +145,8 @@ export const usePurchasesStore = defineStore('purchases', {
           .from(TABLE_NAME)
           .update({
             ingredient_id: editItem.ingredientId,
-            quantity: editItem.quantity
+            quantity: editItem.quantity,
+            memo: editItem.memo
           })
           .eq('id', purchaseId)
           .select(
@@ -148,6 +154,7 @@ export const usePurchasesStore = defineStore('purchases', {
             id, 
             quantity, 
             is_purchased,
+            memo,
             ingredients (
               id, 
               name, 
@@ -162,7 +169,6 @@ export const usePurchasesStore = defineStore('purchases', {
             `
           )
           .single();
-        console.log(data);
 
         if (error) throw error;
 
@@ -239,6 +245,7 @@ export const usePurchasesStore = defineStore('purchases', {
         id: row.id,
         quantity: row.quantity,
         isPurchased: row.is_purchased,
+        memo: row.memo,
         ingredientId: row.ingredients.id,
         ingredientName: row.ingredients.name,
         ingredientUnit: row.ingredients.unit,
