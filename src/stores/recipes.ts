@@ -199,6 +199,15 @@ export const useRecipesStore = defineStore('recipes', {
     },
     async deleteRecipe(recipeId: string) {
       try {
+        // --- レシピ材料テーブルを先に削除 ---
+        const { error: recipeIngredientsError } = await supabase
+          .from(RECIPE_INGREDIENTS_TABLE_NAME)
+          .delete()
+          .eq('recipe_id', recipeId);
+
+        if (recipeIngredientsError) throw recipeIngredientsError;
+
+        // --- レシピテーブルを削除 ---
         const { error } = await supabase.from(TABLE_NAME).delete().eq('id', recipeId);
         if (error) throw error;
 
