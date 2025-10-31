@@ -50,40 +50,48 @@ const typeOptions = [
 
 const genreOptions = [
   {
-    value: '野菜のおかず',
-    label: '野菜のおかず'
+    value: '肉料理',
+    label: '肉料理'
   },
   {
-    value: '肉のおかず',
-    label: '肉のおかず'
+    value: '魚料理',
+    label: '魚料理'
   },
   {
-    value: '魚介のおかず',
-    label: '魚介のおかず'
+    value: '卵料理',
+    label: '卵料理'
   },
   {
-    value: 'ごはんもの',
-    label: 'ごはんもの'
+    value: '丼もの',
+    label: '丼もの'
   },
   {
-    value: 'パスタ・グラタン',
-    label: 'パスタ・グラタン'
-  },
-  {
-    value: '麺',
-    label: '麺'
-  },
-  {
-    value: 'シチュー・スープ・汁物',
-    label: 'シチュー・スープ・汁物'
+    value: '麺類',
+    label: '麺類'
   },
   {
     value: 'サラダ',
     label: 'サラダ'
   },
   {
-    value: '鍋もの',
-    label: '鍋もの'
+    value: '和え物',
+    label: '和え物'
+  },
+  {
+    value: '煮物',
+    label: '煮物'
+  },
+  {
+    value: '揚げ物',
+    label: '揚げ物'
+  },
+  {
+    value: '味噌汁',
+    label: '味噌汁'
+  },
+  {
+    value: 'スープ',
+    label: 'スープ'
   },
   {
     value: 'お菓子',
