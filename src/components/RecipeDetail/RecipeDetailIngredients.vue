@@ -7,7 +7,11 @@ import { Plus, Close } from '@element-plus/icons-vue';
 import loadingUtils from '../../CustomLoading';
 
 interface Props {
-  recipeId: string;
+  recipeId: number;
+}
+
+interface Ingredient {
+  ingredients: Array<any>;
 }
 
 const props = defineProps<Props>();
@@ -16,48 +20,45 @@ const ingredientsStore = useIngredientsStore();
 
 const isDialogVisible = ref(false);
 
-let servingSizeForm = ref<any>(2);
-let ingredientsForm = reactive<any>([
-  {
-    name: '',
-    category: '',
-    quantity: null,
-    unit: ''
-  }
-]);
+const form = reactive<Ingredient>({
+  ingredients: []
+});
+
+// let servingSizeForm = ref<any>(2);
 
 // ========================================
 // Computed
 // ========================================
-const recipe = computed((): any => {
-  // return recipesStore.getById('64e9ebc7f146ca49ddb94c39');
-  return recipesStore.getById(props.recipeId);
+const recipe = computed(() => {
+  const r = recipesStore.getById(props.recipeId);
+  r?.ingredients;
+  return r;
 });
 
-const ingredientOptions = computed((): any => {
-  const categorizedData: any = {};
+// グループ化処理
+const groupedOptions = computed<any[]>(() =>
+  Object.values(
+    ingredientsStore.ingredients.reduce(
+      (acc: any, cur: any) => {
+        const categoryId = cur.categoryId;
+        if (!acc[categoryId]) {
+          acc[categoryId] = {
+            label: cur.categoryName ?? '未分類',
+            options: []
+          };
+        }
 
-  ingredientsStore.ingredients.forEach((item: any) => {
-    const category = item.category;
-    if (!categorizedData[category]) {
-      categorizedData[category] = [];
-    }
-    categorizedData[category].push({
-      id: item._id,
-      value: item.name,
-      label: item.name,
-      unit: item.unit,
-      category: item.category
-    });
-  });
+        acc[categoryId].options.push({
+          value: cur.id,
+          label: cur.name
+        });
 
-  const categorizedArray = Object.keys(categorizedData).map((category) => ({
-    label: category,
-    options: categorizedData[category]
-  }));
-
-  return categorizedArray;
-});
+        return acc;
+      },
+      {} as Record<number, { label: string; options: { value: number; label: string }[] }>
+    )
+  )
+);
 
 // ========================================
 // Methods
@@ -65,67 +66,43 @@ const ingredientOptions = computed((): any => {
 init();
 
 function init() {
-  getIngredients();
+  // getIngredients();
+  form.ingredients.splice(
+    0,
+    form.ingredients.length, // 現在の要素を全削除
+    ...recipe.value.ingredients.map((i) => reactive({ ...i })) // 元の値をコピーして追加
+  );
 }
 
-function getIngredients() {
-  ingredientsStore.fetchIngredients();
-}
+// function getIngredients() {
+//   ingredientsStore.fetchIngredients();
+// }
 
 function openDialog() {
-  // ingredientsForm = recipe.value.ingredients;
-  Object.assign(ingredientsForm, recipe.value.ingredients);
-  servingSizeForm.value = recipe.value.servingSize ? recipe.value.servingSize : 2;
-
   isDialogVisible.value = true;
+
+  form.ingredients.splice(
+    0,
+    form.ingredients.length, // 現在の要素を全削除
+    ...recipe.value.ingredients.map((i) => reactive({ ...i })) // 元の値をコピーして追加
+  );
 }
 
 function addRow() {
-  if (!recipe.value.ingredients) {
-    recipe.value.ingredients = [];
-  }
-
-  ingredientsForm.push({
-    name: '',
-    category: '',
-    quantity: null,
-    unit: ''
-  });
+  form.ingredients.push({ id: null, name: '', quantity: null, unit: '' });
 }
 
 function deleteRow(key: number) {
-  ingredientsForm.splice(key, 1);
-}
-
-function changeIngredient(selectedIngredient: any) {
-  selectedIngredient.name = selectedIngredient.value.label;
-  selectedIngredient.unit = selectedIngredient.value.unit;
-  selectedIngredient.category = selectedIngredient.value.category;
-
-  if (selectedIngredient.category == '調味料' || selectedIngredient.unit == '') {
-    selectedIngredient.quantity = null;
-  } else if (selectedIngredient.unit == 'g') {
-    selectedIngredient.quantity = 300;
-  } else {
-    selectedIngredient.quantity = 1;
-  }
-  console.log(selectedIngredient);
+  form.ingredients.splice(key, 1);
 }
 
 async function saveIngredients() {
   loadingUtils.startLoading();
 
-  // 材料
-  recipe.value.ingredients = ingredientsForm;
+  form.ingredients = form.ingredients.filter((item: any) => item.id !== '' && item.id != null);
 
-  // 人前
-  recipe.value.servingSize = servingSizeForm.value;
+  await recipesStore.editRecipeIngredients(recipe.value.id, { ...form });
 
-  // if (isEdit.value) {
-  await recipesStore.editRecipe({ ...recipe.value });
-  // } else {
-  //   await recipesStore.addRecipe({ ...form });
-  // }
   isDialogVisible.value = false;
   loadingUtils.closeLoading();
 }
@@ -158,16 +135,8 @@ async function saveIngredients() {
     </el-row>
   </div>
 
-  <!-- dialog -->
-  <el-dialog v-model="isDialogVisible" title="材料" width="500px" align-center>
-    <el-row>
-      <el-col :span="24" :offset="1">
-        <el-space>
-          <el-input-number v-model="servingSizeForm" :min="1" :max="10" />
-          <el-text tag="span">人前</el-text>
-        </el-space>
-      </el-col>
-    </el-row>
+  <!-- =========================dialog========================= -->
+  <el-dialog v-model="isDialogVisible" class="responsive-dialog" title="材料" align-center>
     <el-row style="margin-top: 30px">
       <el-col :span="14">
         <el-text tag="p" size="large">材料・調味料</el-text>
@@ -177,42 +146,27 @@ async function saveIngredients() {
       </el-col>
     </el-row>
 
-    <el-row v-for="(ingredient, key) in ingredientsForm" :key="key">
-      <el-col :span="10">
-        <el-select
-          v-model="ingredient.value"
-          value-key="id"
-          placeholder="Select"
-          @change="changeIngredient(ingredient)"
-        >
-          <el-option-group
-            v-for="group in ingredientOptions"
-            :key="group.label"
-            :label="group.label"
-          >
+    <el-row v-for="(ingredient, index) in form.ingredients" :key="ingredient.id ?? index">
+      <!-- 材料 -->
+      <el-col :span="12">
+        <el-select v-model="ingredient.id" placeholder="材料を選択" filterable>
+          <el-option-group v-for="group in groupedOptions" :key="group.label" :label="group.label">
             <el-option
               v-for="item in group.options"
               :key="item.value"
               :label="item.label"
-              :value="item"
+              :value="item.value"
             />
           </el-option-group>
         </el-select>
       </el-col>
 
-      <el-col :span="6" :offset="1">
-        <template v-if="ingredient.category == '調味料' || ingredient.unit == ''">
-          <el-input v-model="ingredient.quantity" placeholder="例)大さじ1/2" />
-        </template>
-        <template v-else>
-          <el-space>
-            <el-input-number v-model="ingredient.quantity" :min="0" :step="0.5" />
-            <el-text tag="span"> {{ ingredient.unit }}</el-text>
-          </el-space>
-        </template>
+      <!-- 分量 -->
+      <el-col :span="8" :offset="1">
+        <el-input v-model="ingredient.quantity" placeholder="分量を入力" />
       </el-col>
-      <el-col :span="3" :offset="4">
-        <el-button @click="deleteRow(key)" :icon="Close" text></el-button>
+      <el-col :span="3">
+        <el-button @click="deleteRow(index)" :icon="Close" text></el-button>
       </el-col>
     </el-row>
     <el-row>
@@ -221,10 +175,8 @@ async function saveIngredients() {
       </el-col>
     </el-row>
     <el-row style="margin-top: 30px" justify="center">
-      <el-col :span="9">
-        <el-button class="main-button" color="#ff8e3c" @click="saveIngredients"
-          >保存して閉じる</el-button
-        >
+      <el-col :span="9" :offset="1">
+        <el-button class="main-button" color="#ff8e3c" @click="saveIngredients">更新</el-button>
       </el-col>
       <el-col :span="6">
         <el-button type="info" @click="isDialogVisible = false">中止</el-button>

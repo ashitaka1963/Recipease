@@ -4,7 +4,7 @@ import { useRecipesStore } from '@/stores/recipes';
 import { Picture as IconPicture, Timer, Link } from '@element-plus/icons-vue';
 
 interface Props {
-  recipeId: string;
+  recipeId: number;
 }
 
 const props = defineProps<Props>();
@@ -61,21 +61,23 @@ const recipeType = computed((): any => {
           <el-col :span="24">
             <el-space>
               <el-icon><Timer /></el-icon>
+              <!-- TODO: -->
               <el-text tag="span">10分</el-text>
             </el-space>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="24">
+            <!-- TODO: -->
             <el-rate size="large" />
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="24">
             <el-text tag="p">関連リンク</el-text>
-            <el-link href="http://localhost:5173/recipeView" type="primary" :icon="Link"
-              >http://localhost:5173/</el-link
-            >
+            <el-link :href="recipe.referenceUrl" type="primary" :icon="Link" target="_blank">{{
+              recipe.referenceUrl
+            }}</el-link>
           </el-col>
         </el-row>
       </el-col>

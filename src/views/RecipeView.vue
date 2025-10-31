@@ -5,7 +5,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { Search, Delete, Edit, Link, ShoppingCart } from '@element-plus/icons-vue';
+import { Search, Delete, Edit, Link, ShoppingCart, Plus, Close } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 
 import { useRecipesStore } from '@/stores/recipes';
@@ -217,7 +217,7 @@ const groupedOptions = computed<any[]>(() =>
 // ========================================
 // Methods
 // ========================================
-function goToRecipeDetailView(recipeId: string) {
+function goToRecipeDetailView(recipeId: number) {
   router.push({ name: 'RecipeDetailView', params: { id: recipeId } });
 }
 
@@ -238,7 +238,7 @@ function getIngredients() {
   ingredientsStore.fetchIngredients();
 }
 
-function editDialogOpen(recipeId: string) {
+function editDialogOpen(recipeId: number) {
   isDialogVisible.value = true;
   isEdit.value = true;
 
@@ -273,6 +273,10 @@ async function saveRecipe() {
   Object.assign(form, defaultForm);
   isDialogVisible.value = false;
   loadingUtils.closeLoading();
+}
+
+function deleteRow(key: number) {
+  form.ingredients.splice(key, 1);
 }
 
 function addIngredient() {
@@ -396,12 +400,12 @@ function selectedType(options: any, name: string) {
                 >
               </template>
               <template #default="scope">
-                <!-- <el-button
+                <el-button
                   class="normal-icon-button"
                   @click="goToRecipeDetailView(scope.row.id)"
                   :icon="Search"
                   circle
-                ></el-button> -->
+                ></el-button>
 
                 <el-button
                   class="main-icon-button"
@@ -464,28 +468,40 @@ function selectedType(options: any, name: string) {
         </el-form-item>
 
         <el-form-item label="材料" prop="ingredientId">
-          <div
+          <el-row
             v-for="(ingredient, index) in form.ingredients"
             :key="index"
             style="margin-bottom: 10px"
           >
-            <el-select v-model="ingredient.id" placeholder="材料を選択" filterable>
-              <el-option-group
-                v-for="group in groupedOptions"
-                :key="group.label"
-                :label="group.label"
-              >
-                <el-option
-                  v-for="item in group.options"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-option-group>
-            </el-select>
-            <el-input v-model="ingredient.quantity" placeholder="分量を入力" />
-          </div>
-          <el-button class="main-button" color="#ff8e3c" @click="addIngredient"> +</el-button>
+            <!-- <el-row> -->
+            <!-- 材料 -->
+            <el-col :span="12">
+              <el-select v-model="ingredient.id" placeholder="材料を選択" filterable>
+                <el-option-group
+                  v-for="group in groupedOptions"
+                  :key="group.label"
+                  :label="group.label"
+                >
+                  <el-option
+                    v-for="item in group.options"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-option-group>
+              </el-select>
+            </el-col>
+
+            <!-- 分量 -->
+            <el-col :span="8" :offset="1">
+              <el-input v-model="ingredient.quantity" placeholder="分量を入力" />
+            </el-col>
+            <el-col :span="3">
+              <el-button @click="deleteRow(index)" :icon="Close" text></el-button>
+            </el-col>
+          </el-row>
+          <!-- </div> -->
+          <el-button @click="addIngredient" :icon="Plus" type="primary" text>材料を追加</el-button>
         </el-form-item>
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{

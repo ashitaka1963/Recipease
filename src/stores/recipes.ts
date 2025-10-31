@@ -13,7 +13,7 @@ export const useRecipesStore = defineStore('recipes', {
   },
   getters: {
     getById: (state) => {
-      return (recipeId: string): any => {
+      return (recipeId: number): any => {
         return state.recipes.find((item: any) => item.id === recipeId);
       };
     }
@@ -171,6 +171,66 @@ export const useRecipesStore = defineStore('recipes', {
           dish_type,
           recipe_ingredients  (
             id, 
+            quantity,
+            ingredients (
+              id,
+              name,
+              unit
+            )
+          )
+          `
+          )
+          .eq('id', recipeId)
+          .single();
+
+        if (error) throw error;
+
+        // ローカルキャッシュを更新
+        const updateBalance = this.getById(recipeId);
+
+        Object.assign(updateBalance, this.mapRow(data));
+
+        showMessage('レシピが更新されました。', 'success');
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('レシピの更新に失敗しました。', 'error');
+        return null;
+      }
+    },
+    async editRecipeIngredients(recipeId: number, editItem: any) {
+      try {
+        // --- ① レシピ材料を一旦削除 ---
+        await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).delete().eq('recipe_id', recipeId);
+
+        // --- ② レシピ追加 --
+        if (editItem.ingredients.length >= 0) {
+          // レシピ材料テーブル追加
+          const payload = editItem.ingredients.map((ri: any) => ({
+            recipe_id: recipeId,
+            ingredient_id: ri.id,
+            quantity: ri.quantity
+          }));
+
+          const { error: ingredientsError } = await supabase
+            .from(RECIPE_INGREDIENTS_TABLE_NAME)
+            .insert(payload);
+
+          if (ingredientsError) throw ingredientsError;
+        }
+
+        // --- ④ 更新データ取得 --
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select(
+            `
+          id,
+          name,
+          description,
+          genre,
+          reference_url,
+          dish_type,
+          recipe_ingredients  (
+            id,
             quantity,
             ingredients (
               id,

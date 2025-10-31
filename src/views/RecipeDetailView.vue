@@ -11,6 +11,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const recipeId = Number(props.id);
 
 const isTop = ref(false);
 </script>
@@ -19,8 +20,8 @@ const isTop = ref(false);
   <main>
     <PageHeader headerName="レシピ詳細" :isTop="isTop" />
 
-    <RecipeDetailInfo :recipeId="props.id" />
-    <RecipeDetailIngredients :recipeId="props.id" />
-    <RecipeDetailSteps :recipeId="props.id" />
+    <RecipeDetailInfo :recipeId="recipeId" />
+    <RecipeDetailIngredients :recipeId="recipeId" />
+    <!-- <RecipeDetailSteps :recipeId="props.id" /> -->
   </main>
 </template>
