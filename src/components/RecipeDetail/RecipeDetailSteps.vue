@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { useRecipesStore } from '@/stores/recipes';
 
 interface Props {
-  recipeId: string;
+  recipeId: number;
 }
 
 const props = defineProps<Props>();

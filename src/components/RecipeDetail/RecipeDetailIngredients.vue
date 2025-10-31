@@ -70,7 +70,7 @@ function init() {
   form.ingredients.splice(
     0,
     form.ingredients.length, // 現在の要素を全削除
-    ...recipe.value.ingredients.map((i) => reactive({ ...i })) // 元の値をコピーして追加
+    ...recipe.value.ingredients.map((i: any) => reactive({ ...i })) // 元の値をコピーして追加
   );
 }
 
@@ -84,7 +84,7 @@ function openDialog() {
   form.ingredients.splice(
     0,
     form.ingredients.length, // 現在の要素を全削除
-    ...recipe.value.ingredients.map((i) => reactive({ ...i })) // 元の値をコピーして追加
+    ...recipe.value.ingredients.map((i: any) => reactive({ ...i })) // 元の値をコピーして追加
   );
 }
 
