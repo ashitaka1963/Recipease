@@ -52,7 +52,7 @@ const recipeType = computed((): any => {
           <el-col :span="3">
             <el-tag :type="recipeType">{{ recipe.type }}</el-tag>
           </el-col>
-          <el-col :span="2">
+          <el-col :span="2" :offset="1">
             <el-tag type="info">{{ recipe.genre }}</el-tag>
           </el-col>
         </el-row>
@@ -60,7 +60,7 @@ const recipeType = computed((): any => {
           <el-col :span="24"> </el-col>
         </el-row>
         <el-row>
-          <el-col :span="3" style="align-content: center">
+          <el-col :span="4" style="align-content: center">
             <!-- TODO: -->
             <el-text tag="span">
               <el-icon>
@@ -69,7 +69,7 @@ const recipeType = computed((): any => {
               10分</el-text
             >
           </el-col>
-          <el-col :span="2">
+          <el-col :span="2" :offset="1">
             <!-- TODO: -->
             <el-rate size="large" />
           </el-col>
