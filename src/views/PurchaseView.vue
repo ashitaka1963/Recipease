@@ -256,7 +256,7 @@ function onCancelButtonClick() {
       <el-row>
         <el-col :span="24">
           <el-table :data="purchasedItems" style="width: 100%">
-            <el-table-column width="55">
+            <el-table-column width="25">
               <template #default="scope">
                 <el-checkbox
                   v-model="scope.row.isPurchased"
@@ -325,7 +325,7 @@ function onCancelButtonClick() {
           <el-row>
             <el-col :span="24">
               <el-table :data="unpurchasedItems" style="width: 80%">
-                <el-table-column width="55">
+                <el-table-column width="25">
                   <template #default="scope">
                     <el-checkbox
                       v-model="scope.row.isPurchased"
