@@ -22,6 +22,6 @@ const isTop = ref(false);
 
     <RecipeDetailInfo :recipeId="recipeId" />
     <RecipeDetailIngredients :recipeId="recipeId" />
-    <!-- <RecipeDetailSteps :recipeId="props.id" /> -->
+    <RecipeDetailSteps :recipeId="recipeId" />
   </main>
 </template>

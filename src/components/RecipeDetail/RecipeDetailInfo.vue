@@ -10,7 +10,8 @@ interface Props {
 const props = defineProps<Props>();
 const recipesStore = useRecipesStore();
 
-const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg'; //TODO:
+const url =
+  'https://user-image.delishkitchen.tv/cooking_report/original/434642787716038997.unknown?version=1761284344'; //TODO:
 
 // ========================================
 // Computed

@@ -12,7 +12,7 @@ const recipesStore = useRecipesStore();
 const active = ref(0);
 
 const next = () => {
-  if (active.value++ > 2) active.value = 0;
+  if (active.value++ >= recipe.value.steps.length) active.value = 0;
 };
 
 // ========================================
@@ -28,14 +28,19 @@ const recipe = computed((): any => {
 <template>
   <div class="container">
     <el-text tag="p" class="sub-title">手順</el-text>
-    <el-button style="margin-top: 12px" @click="next">Next step</el-button>
-    <!-- <div class="container"> -->
-    <div style="height: 300px">
+    <!-- <el-button style="margin-top: 12px" @click="next">Next step</el-button> -->
+    <div @click="next">
       <el-steps direction="vertical" :active="active" finish-status="success">
-        <el-step title="Step 1" description="xxxを炒める" />
-        <el-step title="Step 2" description="Some description" />
-        <el-step title="Step 3" description="Some description" />
+        <template v-for="(step, index) in recipe.steps" :key="step.id">
+          <el-step :title="'Step ' + (index + 1)" :description="step.description" />
+        </template>
       </el-steps>
     </div>
   </div>
 </template>
+
+<style>
+div.el-step__description {
+  margin-bottom: 30px;
+}
+</style>

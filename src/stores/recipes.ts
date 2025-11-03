@@ -5,6 +5,29 @@ import showMessage from '../CustomMessage';
 const TABLE_NAME = 'recipes';
 const RECIPE_INGREDIENTS_TABLE_NAME = 'recipe_ingredients';
 
+const RECIPE_LIST_SELECT = `
+          id, 
+          name,
+          description, 
+          genre,
+          reference_url,
+          dish_type,
+          recipe_ingredients  (
+            id, 
+            quantity,
+            ingredients (
+              id,
+              name,
+              unit
+            )
+          ),
+          recipe_steps  (
+            id, 
+            step_no,
+            description
+          )
+          `;
+
 export const useRecipesStore = defineStore('recipes', {
   state: () => {
     return {
@@ -21,24 +44,9 @@ export const useRecipesStore = defineStore('recipes', {
   actions: {
     async fetchRecipes() {
       try {
-        const { data, error } = await supabase.from(TABLE_NAME).select(`
-          id, 
-          name,
-          description, 
-          genre,
-          reference_url,
-          dish_type,
-          recipe_ingredients  (
-            id, 
-            quantity,
-            ingredients (
-              id,
-              name,
-              unit
-            )
-          )
-          `);
+        const { data, error } = await supabase.from(TABLE_NAME).select(RECIPE_LIST_SELECT);
 
+        console.log(data);
         if (error) throw error;
 
         this.recipes = data.map(this.mapRow);
@@ -89,25 +97,7 @@ export const useRecipesStore = defineStore('recipes', {
         // --- ③ 登録データ取得 --
         const { data, error } = await supabase
           .from(TABLE_NAME)
-          .select(
-            `
-          id, 
-          name,
-          description, 
-          genre,
-          reference_url,
-          dish_type,
-          recipe_ingredients  (
-            id, 
-            quantity,
-            ingredients (
-              id,
-              name,
-              unit
-            )
-          )
-          `
-          )
+          .select(RECIPE_LIST_SELECT)
           .eq('id', recipeId)
           .single();
 
@@ -161,25 +151,7 @@ export const useRecipesStore = defineStore('recipes', {
         // --- ④ 更新データ取得 --
         const { data, error } = await supabase
           .from(TABLE_NAME)
-          .select(
-            `
-          id, 
-          name,
-          description, 
-          genre,
-          reference_url,
-          dish_type,
-          recipe_ingredients  (
-            id, 
-            quantity,
-            ingredients (
-              id,
-              name,
-              unit
-            )
-          )
-          `
-          )
+          .select(RECIPE_LIST_SELECT)
           .eq('id', recipeId)
           .single();
 
@@ -221,25 +193,7 @@ export const useRecipesStore = defineStore('recipes', {
         // --- ④ 更新データ取得 --
         const { data, error } = await supabase
           .from(TABLE_NAME)
-          .select(
-            `
-          id,
-          name,
-          description,
-          genre,
-          reference_url,
-          dish_type,
-          recipe_ingredients  (
-            id,
-            quantity,
-            ingredients (
-              id,
-              name,
-              unit
-            )
-          )
-          `
-          )
+          .select(RECIPE_LIST_SELECT)
           .eq('id', recipeId)
           .single();
 
@@ -295,6 +249,11 @@ export const useRecipesStore = defineStore('recipes', {
           quantity: ri.quantity,
           name: ri.ingredients.name,
           unit: ri.ingredients.unit
+        })),
+        steps: row.recipe_steps.map((ri: any) => ({
+          id: ri.id,
+          stepNo: ri.step_no,
+          description: ri.description
         }))
       };
     }
