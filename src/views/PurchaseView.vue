@@ -2,7 +2,7 @@
 // TODO:調味料は重複させない？
 
 import { ref, reactive, computed } from 'vue';
-import { Delete, Edit } from '@element-plus/icons-vue';
+import { Delete, Edit, Plus } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { usePurchasesStore } from '@/stores/purchases';
 import { useIngredientsStore } from '@/stores/ingredients';
@@ -256,7 +256,7 @@ function onCancelButtonClick() {
       <el-row>
         <el-col :span="24">
           <el-table :data="purchasedItems" style="width: 100%">
-            <el-table-column width="25">
+            <el-table-column width="26">
               <template #default="scope">
                 <el-checkbox
                   v-model="scope.row.isPurchased"
@@ -359,6 +359,19 @@ function onCancelButtonClick() {
       </el-collapse>
     </div>
 
+    <!-- FAB -->
+    <el-button
+      class="main-button fab"
+      color="#ff8e3c"
+      @click="
+        isDialogVisible = true;
+        isEdit = false;
+      "
+      :icon="Plus"
+      circle
+      size="large"
+    ></el-button>
+
     <!-- dialog -->
     <el-dialog
       v-model="isDialogVisible"
@@ -435,5 +448,11 @@ el-row {
   --el-tag-bg-color: #fdfbec;
   --el-tag-border-color: #faf9d8;
   --el-tag-hover-color: #e6db3c;
+}
+
+.fab {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
 }
 </style>
