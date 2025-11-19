@@ -324,7 +324,7 @@ function onCancelButtonClick() {
         <el-collapse-item title="購入済み" name="1">
           <el-row>
             <el-col :span="24">
-              <el-table :data="unpurchasedItems" style="width: 80%">
+              <el-table :data="unpurchasedItems" style="width: 100%">
                 <el-table-column width="25">
                   <template #default="scope">
                     <el-checkbox
@@ -369,7 +369,6 @@ function onCancelButtonClick() {
       "
       :icon="Plus"
       circle
-      size="large"
     ></el-button>
 
     <!-- dialog -->
@@ -454,5 +453,8 @@ el-row {
   position: fixed;
   bottom: 16px;
   right: 16px;
+  width: 56px;
+  height: 56px;
+  z-index: 9999;
 }
 </style>
