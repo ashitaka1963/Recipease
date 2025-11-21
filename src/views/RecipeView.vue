@@ -156,14 +156,14 @@ const rules = reactive<FormRules<Recipe>>({
     {
       required: true,
       message: 'カテゴリーを選択してください。',
-      trigger: 'blur'
+      trigger: 'change'
     }
   ],
   genre: [
     {
       required: true,
       message: 'カテゴリーを選択してください。',
-      trigger: 'blur'
+      trigger: 'change'
     }
   ]
   // level: [
@@ -270,8 +270,8 @@ async function saveRecipe() {
   } else {
     await recipesStore.addRecipe({ ...form });
   }
-  Object.assign(form, defaultForm);
-  isDialogVisible.value = false;
+
+  cancelForm();
   loadingUtils.closeLoading();
 }
 

@@ -51,7 +51,7 @@ const rules = reactive<FormRules<Ingredient>>({
     {
       required: true,
       message: 'カテゴリーを選択してください。',
-      trigger: 'blur'
+      trigger: 'change'
     }
   ]
 });
@@ -123,8 +123,8 @@ async function saveIngredient() {
   } else {
     await ingredientsStore.addIngredient({ ...form });
   }
-  Object.assign(form, defaultForm);
-  isDialogVisible.value = false;
+
+  cancelForm();
   loadingUtils.closeLoading();
 }
 

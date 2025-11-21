@@ -52,17 +52,13 @@ const defaultForm: Purchase = {
 };
 
 const rules = reactive<FormRules<Purchase>>({
-  // ingredientId: [
-  //   { required: true, message: '購入品を選択してください。', trigger: 'blur' }
-  //   // { min: 1, max: 15, message: '15文字以内で入力してください。', trigger: 'blur' }
-  // ]
-  // categoryId: [
-  //   {
-  //     required: true,
-  //     message: 'カテゴリーを選択してください。',
-  //     trigger: 'blur'
-  //   }
-  // ]
+  ingredientId: [
+    {
+      required: true,
+      message: '材料を選択してください。',
+      trigger: 'change'
+    }
+  ]
 });
 
 init();
@@ -223,8 +219,8 @@ async function savePuchase() {
     await purchasesStore.addPurchase({ ...form });
   }
 
-  Object.assign(form, defaultForm);
-  isDialogVisible.value = false;
+  cancelForm();
+
   loadingUtils.closeLoading();
 }
 
@@ -284,7 +280,7 @@ function onCancelButtonClick() {
               </template>
             </el-table-column>
             <el-table-column prop="memo" label="メモ" />
-            <el-table-column width="130">
+            <el-table-column width="100">
               <template #header>
                 <el-button
                   class="main-button"
@@ -293,7 +289,7 @@ function onCancelButtonClick() {
                     isDialogVisible = true;
                     isEdit = false;
                   "
-                  >リストに追加</el-button
+                  >追加</el-button
                 >
               </template>
               <template #default="scope">
@@ -325,7 +321,7 @@ function onCancelButtonClick() {
           <el-row>
             <el-col :span="24">
               <el-table :data="unpurchasedItems" style="width: 100%">
-                <el-table-column width="25">
+                <el-table-column width="26">
                   <template #default="scope">
                     <el-checkbox
                       v-model="scope.row.isPurchased"
@@ -384,7 +380,7 @@ function onCancelButtonClick() {
           <el-input v-model="form.ingredientId" />
         </el-form-item> -->
 
-        <el-form-item label="材料" prop="name">
+        <el-form-item label="材料" prop="ingredientId">
           <el-select v-model="form.ingredientId" placeholder="材料を選択" filterable>
             <el-option-group
               v-for="group in groupedOptions"
