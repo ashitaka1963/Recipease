@@ -38,8 +38,8 @@ function onMenuClick() {
           <TheSideMenu @menuClick="onMenuClick" />
         </el-drawer>
 
-        <el-main>
-          <div class="sub-nav">
+        <el-main class="main-with-side">
+          <div v-if="isMobile" class="sub-nav">
             <el-button type="primary" text :icon="Expand" @click="drawer = true"> Menu </el-button>
           </div>
           <RouterView />
@@ -50,6 +50,21 @@ function onMenuClick() {
 </template>
 
 <style scoped>
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  border-right: 1px solid #ebeef5;
+}
+
+@media (min-width: 600px) {
+  /* スマホではないとき固定サイドメニューの幅分ずらす */
+  .main-with-side {
+    margin-left: 150px;
+  }
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;
