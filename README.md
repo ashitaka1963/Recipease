@@ -1,67 +1,67 @@
-# Recipease
+# RecipeEase
 
-This template should help get you started developing with Vue 3 in Vite.
+レシピ管理アプリです。
 
-## Recommended IDE Setup
+## 概要
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+本アプリケーションでは、主に以下の機能を提供しています。
 
-## Type Support for `.vue` Imports in TS
+- **買い物リスト管理**: 必要な食材をリスト化し、買い物をサポートします。
+- **食材管理**: 家にある食材の在庫を管理できます。
+- **レシピ管理**: レシピの閲覧・詳細確認が可能です。
+- **献立カレンダー**: 日々の献立をカレンダー形式で管理・確認できます。
+- **CSV インポート**: 外部データ等を CSV 形式で取り込むことができます。
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+## 技術スタック
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+- **Frontend**: Vue 3 + Vite (Hosted on GitHub Pages)
+- **Backend**: Supabase
+- **Language**: TypeScript
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+## おすすめの IDE セットアップ
 
-## Customize configuration
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (Vetur は無効化) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+## プロジェクトのセットアップ
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 開発用サーバの起動 (ホットリロード)
 
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### 本番用ビルドと型チェック
 
 ```sh
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+### 単体テスト (Vitest)
 
 ```sh
 npm run test:unit
 ```
 
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
+### E2E テスト (Cypress)
 
 ```sh
 npm run test:e2e:dev
 ```
 
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
+このコマンドは Vite 開発サーバーに対して E2E テストを実行します。本番ビルドよりも高速です。
 
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
+デプロイ前 (CI 環境など) には本番ビルドでのテストが推奨されます:
 
 ```sh
 npm run build
 npm run test:e2e
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Lint (ESLint)
 
 ```sh
 npm run lint
