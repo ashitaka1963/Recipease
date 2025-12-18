@@ -74,8 +74,10 @@ export const useIngredientsStore = defineStore('ingredients', {
 
         if (error) throw error;
 
-        this.ingredients.push(this.mapRow(data));
+        const newIngredient = this.mapRow(data);
+        this.ingredients.push(newIngredient);
         showMessage('材料が登録されました。', 'success');
+        return newIngredient;
       } catch (error) {
         console.error('Error:', error);
         showMessage('材料の登録に失敗しました。', 'error');

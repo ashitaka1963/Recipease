@@ -6,6 +6,8 @@ import { Delete, Edit, Plus } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { usePurchasesStore } from '@/stores/purchases';
 import { useIngredientsStore } from '@/stores/ingredients';
+import { useIngredientCategoriesStore } from '@/stores/ingredientCategories';
+
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
@@ -13,6 +15,8 @@ import loadingUtils from '../CustomLoading';
 
 const purchasesStore = usePurchasesStore();
 const ingredientsStore = useIngredientsStore();
+const ingredientCategoriesStore = useIngredientCategoriesStore();
+
 
 const ruleFormRef = ref<FormInstance>();
 const isDialogVisible = ref(false);
@@ -20,6 +24,30 @@ const isConfirmDialogVisible = ref(false);
 const deletePurchaseId = ref('');
 const deletePurchaseName = ref('');
 const isEdit = ref(true);
+
+// Ingredient Dialog State
+const isIngredientDialogVisible = ref(false);
+const ingredientRuleFormRef = ref<FormInstance>();
+const ingredientForm = reactive({
+  name: '',
+  categoryId: '',
+  unit: ''
+});
+const defaultIngredientForm = {
+  name: '',
+  categoryId: '',
+  unit: ''
+};
+const ingredientRules = reactive<FormRules>({
+  name: [
+    { required: true, message: '食材名を入力してください。', trigger: 'blur' },
+    { min: 1, max: 15, message: '15文字以内で入力してください。', trigger: 'blur' }
+  ],
+  categoryId: [
+    { required: true, message: 'カテゴリーを選択してください。', trigger: 'change' }
+  ]
+});
+
 
 const target = ref('nextWeek');
 const purchased = ref<any>(null);
@@ -29,7 +57,8 @@ const purchased = ref<any>(null);
 interface Purchase {
   id: string | null;
 
-  ingredientId: number | null;
+  ingredientId: number | string | null;
+
   quantity: number | null;
   isPurchased: boolean;
   memo: string;
@@ -96,30 +125,66 @@ const unpurchasedItems = computed(() =>
     .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
 );
 
+const ingredientCategories = computed(() => {
+  return [...ingredientCategoriesStore.ingredientCategories].sort((a, b) => a.id - b.id);
+});
+
+
+const searchQuery = ref('');
+
+const handleFilter = (query: string) => {
+  searchQuery.value = query;
+};
+
 // グループ化処理
-const groupedOptions = computed<any[]>(() =>
-  Object.values(
-    ingredientsStore.ingredients.reduce(
-      (acc: any, cur: any) => {
-        const categoryId = cur.categoryId;
-        if (!acc[categoryId]) {
-          acc[categoryId] = {
-            label: cur.categoryName ?? '未分類',
-            options: []
-          };
+const groupedOptions = computed<any[]>(() => {
+  const query = searchQuery.value.trim();
+  const lowerQuery = query.toLowerCase();
+
+  // フィルタリング
+  const filtered = lowerQuery
+    ? ingredientsStore.ingredients.filter((i: any) =>
+        i.name.toLowerCase().includes(lowerQuery)
+      )
+    : ingredientsStore.ingredients;
+
+  // カテゴリごとにグループ化
+  const groupsMap = filtered.reduce(
+    (acc: any, cur: any) => {
+      const categoryId = cur.categoryId;
+      if (!acc[categoryId]) {
+        acc[categoryId] = {
+          label: cur.categoryName ?? '未分類',
+          options: []
+        };
+      }
+      acc[categoryId].options.push({
+        value: cur.id,
+        label: cur.name
+      });
+      return acc;
+    },
+    {} as Record<number, { label: string; options: { value: number; label: string }[] }>
+  );
+
+  const groups = Object.values(groupsMap);
+
+  // 未登録の入力がある場合に「新規作成」オプションを先頭に追加
+  if (query && !ingredientsStore.ingredients.some((i: any) => i.name.toLowerCase() === lowerQuery)) {
+    groups.unshift({
+      label: '新規作成',
+      options: [
+        {
+          value: query,
+          label: query,
+          isNew: true
         }
+      ]
+    });
+  }
 
-        acc[categoryId].options.push({
-          value: cur.id,
-          label: cur.name
-        });
-
-        return acc;
-      },
-      {} as Record<number, { label: string; options: { value: number; label: string }[] }>
-    )
-  )
-);
+  return groups;
+});
 // const purchaseItems = computed((): any => {
 //   // return purchasesStore.purchases;
 
@@ -163,6 +228,7 @@ async function init() {
 
   await getPurchases();
   getIngredients();
+  getIngredientCategories();
 
   loadingUtils.closeLoading();
 }
@@ -173,6 +239,11 @@ function getPurchases() {
 
 function getIngredients() {
   ingredientsStore.fetchIngredients();
+}
+
+function getIngredientCategories() {
+  ingredientCategoriesStore.fetchIngredientCategories();
+
 }
 
 function editDialogOpen(purchaseId: string) {
@@ -242,6 +313,55 @@ function onCancelButtonClick() {
   deletePurchaseName.value = '';
   deletePurchaseId.value = '';
 }
+
+// Ingredient Creation Methods
+const handleIngredientChange = (val: string | number) => {
+  searchQuery.value = '';
+  if (typeof val === 'string') {
+    // New ingredient entered
+    openIngredientDialog(val);
+  }
+};
+
+function openIngredientDialog(name: string) {
+  ingredientForm.name = name;
+  isIngredientDialogVisible.value = true;
+}
+
+async function submitIngredientForm() {
+  const formEl = ingredientRuleFormRef.value;
+  if (!formEl) return;
+
+  await formEl.validate((valid) => {
+    if (valid) {
+      saveNewIngredient();
+    }
+  });
+}
+
+async function saveNewIngredient() {
+  loadingUtils.startLoading();
+  const newIngredient = await ingredientsStore.addIngredient({ ...ingredientForm });
+  loadingUtils.closeLoading();
+
+  if (newIngredient) {
+    form.ingredientId = newIngredient.id;
+    cancelIngredientForm();
+  }
+}
+
+function cancelIngredientForm() {
+  const formEl = ingredientRuleFormRef.value;
+  if (formEl) formEl.resetFields();
+  Object.assign(ingredientForm, defaultIngredientForm);
+  isIngredientDialogVisible.value = false;
+  
+  // If cancelled without saving, reset ingredient selection if it was a string
+  if (typeof form.ingredientId === 'string' && !ingredientsStore.getById(form.ingredientId)) {
+     form.ingredientId = null; 
+  }
+}
+
 </script>
 
 <template>
@@ -381,7 +501,15 @@ function onCancelButtonClick() {
         </el-form-item> -->
 
         <el-form-item label="材料" prop="ingredientId">
-          <el-select v-model="form.ingredientId" placeholder="材料を選択" filterable>
+          <el-select
+            v-model="form.ingredientId"
+            placeholder="材料を選択"
+            filterable
+            :filter-method="handleFilter"
+            default-first-option
+            @change="handleIngredientChange"
+            @visible-change="(visible) => !visible && (searchQuery = '')"
+          >
             <el-option-group
               v-for="group in groupedOptions"
               :key="group.label"
@@ -392,7 +520,12 @@ function onCancelButtonClick() {
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
-              />
+              >
+                <div class="option-item">
+                  <span>{{ item.label }}</span>
+                  <el-tag v-if="item.isNew" size="small" type="danger" effect="dark" round>New</el-tag>
+                </div>
+              </el-option>
             </el-option-group>
           </el-select>
         </el-form-item>
@@ -404,12 +537,6 @@ function onCancelButtonClick() {
           <el-input v-model="form.memo" type="textarea" />
         </el-form-item>
 
-        <!-- 
-        <template v-if="form.categoryId !== '7'">
-          <el-form-item label="単位" prop="unit">
-            <el-input v-model="form.unit" />
-          </el-form-item>
-        </template> -->
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
             dialogButtonName
@@ -418,6 +545,54 @@ function onCancelButtonClick() {
         </el-form-item>
       </el-form>
     </el-dialog>
+
+    <!-- Ingredient Creation Dialog -->
+    <el-dialog
+      v-model="isIngredientDialogVisible"
+      title="新規材料追加"
+      class="responsive-dialog"
+      align-center
+      :before-close="cancelIngredientForm"
+    >
+      <el-form
+        ref="ingredientRuleFormRef"
+        :model="ingredientForm"
+        :rules="ingredientRules"
+        label-width="80px"
+        status-icon
+      >
+        <el-form-item label="名前" prop="name">
+          <el-input v-model="ingredientForm.name" />
+        </el-form-item>
+
+        <el-form-item label="カテゴリ" prop="categoryId">
+          <el-select
+            v-model="ingredientForm.categoryId"
+            placeholder="Select"
+            @change="ingredientForm.unit = ''"
+          >
+            <el-option
+              v-for="item in ingredientCategories"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <template v-if="ingredientForm.categoryId !== '7'">
+          <el-form-item label="単位" prop="unit">
+            <el-input v-model="ingredientForm.unit" />
+          </el-form-item>
+        </template>
+        <el-form-item>
+          <el-button class="main-button" color="#ff8e3c" @click="submitIngredientForm"
+            >追加</el-button
+          >
+          <el-button type="info" @click="cancelIngredientForm">中止</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
 
     <ConfirmDialog
       :isDialogVisible="isConfirmDialogVisible"
@@ -445,6 +620,13 @@ el-row {
   --el-tag-hover-color: #e6db3c;
 }
 
+.help-text {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
 .fab {
   position: fixed;
   bottom: 16px;
@@ -452,5 +634,11 @@ el-row {
   width: 56px;
   height: 56px;
   z-index: 9999;
+}
+
+.option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
