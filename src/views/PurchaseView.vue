@@ -508,7 +508,7 @@ function cancelIngredientForm() {
             :filter-method="handleFilter"
             default-first-option
             @change="handleIngredientChange"
-            @visible-change="(visible) => !visible && (searchQuery = '')"
+            @visible-change="(visible: boolean) => !visible && (searchQuery = '')"
           >
             <el-option-group
               v-for="group in groupedOptions"
