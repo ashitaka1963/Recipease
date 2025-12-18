@@ -46,7 +46,6 @@ export const useRecipesStore = defineStore('recipes', {
       try {
         const { data, error } = await supabase.from(TABLE_NAME).select(RECIPE_LIST_SELECT);
 
-        console.log(data);
         if (error) throw error;
 
         this.recipes = data.map(this.mapRow);

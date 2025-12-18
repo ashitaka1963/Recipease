@@ -240,7 +240,6 @@ export const usePurchasesStore = defineStore('purchases', {
       //   });
     },
     mapRow(row: any) {
-      console.log(row);
       return {
         id: row.id,
         quantity: row.quantity,
