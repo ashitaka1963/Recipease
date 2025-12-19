@@ -186,23 +186,24 @@ export const usePurchasesStore = defineStore('purchases', {
       }
     },
     async changeIsPurchased(id: any, isPurchased: boolean) {
+      // ローカルキャッシュを即座に更新 (Optimistic UI)
+      const updatePurchase = this.getById(id);
+      if (!updatePurchase) return;
+
+      const previousValue = updatePurchase.isPurchased;
+      Object.assign(updatePurchase, { isPurchased: isPurchased });
+
       try {
         const { error } = await supabase
           .from(TABLE_NAME)
           .update({ is_purchased: isPurchased })
           .eq('id', id);
 
-        if (error) throw error;
-
-        // ローカルキャッシュを更新
-        const updatePurchase = this.getById(id);
-
-        console.log(updatePurchase, id);
-
-        Object.assign(updatePurchase, { isPurchased: isPurchased });
-
-        showMessage('材料が更新されました。', 'success');
-        // return null;
+        if (error) {
+          // エラー時は元の値に戻す
+          Object.assign(updatePurchase, { isPurchased: previousValue });
+          throw error;
+        }
       } catch (error: any) {
         console.error('Error:', error);
         showMessage('材料の更新に失敗しました。', 'error');

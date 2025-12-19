@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// TODO:調味料は重複させない？
 
 import { ref, reactive, computed } from 'vue';
 import { Delete, Edit, Plus } from '@element-plus/icons-vue';
@@ -119,13 +118,13 @@ const dialogButtonName = computed((): any => {
 //   }
 // });
 
-const purchasedItems = computed(() =>
+const unpurchasedItems = computed(() =>
   purchasesStore.purchases
     .filter((i: any) => !i.isPurchased)
     .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
 );
 
-const unpurchasedItems = computed(() =>
+const purchasedItems = computed(() =>
   purchasesStore.purchases
     .filter((i: any) => i.isPurchased)
     .sort((a: any, b: any) => a.ingredientCategoryName.localeCompare(b.ingredientCategoryName))
@@ -435,7 +434,7 @@ function cancelIngredientForm() {
         >
           <span class="btn-text">定番リスト編集</span>
         </el-button>
-        <el-button
+        <!-- <el-button
           class="main-button"
           color="#ff8e3c"
           :icon="Plus"
@@ -445,13 +444,13 @@ function cancelIngredientForm() {
           "
         >
           追加
-        </el-button>
+        </el-button> -->
       </div>
 
       <!-- 買い物リスト -->
       <el-row>
         <el-col :span="24">
-          <el-table :data="purchasedItems" style="width: 100%">
+          <el-table :data="unpurchasedItems" style="width: 100%">
             <el-table-column width="26">
               <template #default="scope">
                 <el-checkbox
@@ -509,7 +508,7 @@ function cancelIngredientForm() {
         <el-collapse-item title="購入済み" name="1">
           <el-row>
             <el-col :span="24">
-              <el-table :data="unpurchasedItems" style="width: 100%">
+              <el-table :data="purchasedItems" style="width: 100%">
                 <el-table-column width="26">
                   <template #default="scope">
                     <el-checkbox
