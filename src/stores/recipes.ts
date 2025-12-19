@@ -18,6 +18,7 @@ const RECIPE_LIST_SELECT = `
             ingredients (
               id,
               name,
+              category_id,
               unit
             )
           ),
@@ -247,7 +248,8 @@ export const useRecipesStore = defineStore('recipes', {
           id: ri.ingredients.id,
           quantity: ri.quantity,
           name: ri.ingredients.name,
-          unit: ri.ingredients.unit
+          unit: ri.ingredients.unit,
+          categoryId: ri.ingredients.category_id
         })),
         steps: row.recipe_steps.map((ri: any) => ({
           id: ri.id,

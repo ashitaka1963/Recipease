@@ -362,8 +362,8 @@ function selectedType(options: any, name: string) {
             </el-table-column>
             <el-table-column prop="name" label="材料">
               <template #default="scope">
-                <!-- TODO: 調味料省く -->
-                {{ scope.row.ingredients.map((i: any) => i.name).join(', ') }}
+                <!-- 調味料（categoryId: 7）を除外して表示 -->
+                {{ scope.row.ingredients.filter((i: any) => i.categoryId !== 7 && i.categoryId !== '7').map((i: any) => i.name).join(', ') }}
 
                 <template v-if="scope.row.ingredients.length > 0">
                   <el-button
