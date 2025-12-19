@@ -2,8 +2,8 @@
 // TODO:新規登録後、formの値が残る
 // TODO:https://element-plus.org/en-US/component/upload.html#photo-wall
 
-import { ref, reactive, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 import { Search, Delete, Edit, Link, ShoppingCart, Plus, Close } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
@@ -17,6 +17,7 @@ import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
 import loadingUtils from '../CustomLoading';
 
 const router = useRouter();
+const route = useRoute();
 const recipesStore = useRecipesStore();
 const ingredientsStore = useIngredientsStore();
 const purchasesStore = usePurchasesStore();
@@ -226,6 +227,14 @@ async function init() {
 
   await getRecipes();
   getIngredients();
+
+  // ストックからの変換チェック
+  if (route.query.fromStock === 'true') {
+    isDialogVisible.value = true;
+    isEdit.value = false;
+    form.name = route.query.title as string || '';
+    form.referenceUrl = route.query.url as string || '';
+  }
 
   loadingUtils.closeLoading();
 }

@@ -3,14 +3,11 @@ import { useRouter, useRoute } from 'vue-router';
 import { computed } from 'vue';
 
 import {
-  Menu as IconMenu,
-  Setting,
-  User,
-  Apple,
   ShoppingCart,
   Calendar,
   ForkSpoon,
-  UploadFilled
+  Star,
+  Apple
 } from '@element-plus/icons-vue';
 
 interface Emits {
@@ -27,7 +24,8 @@ const routeMap = new Map([
   ['4', 'PurchaseView'],
   ['5', 'CalendarView'],
   ['6', 'RecipeView'],
-  ['7', 'CsvImportView']
+  ['7', 'CsvImportView'],
+  ['8', 'RecipeStockView']
 ]);
 
 // 現在のルート名からアクティブなインデックスを計算
@@ -68,6 +66,10 @@ const menuClick = (key: string) => {
       <el-menu-item index="6">
         <el-icon :size="50"><ForkSpoon /></el-icon>
         <template #title>レシピ</template>
+      </el-menu-item>
+      <el-menu-item index="8">
+        <el-icon :size="50"><Star /></el-icon>
+        <template #title>ストック</template>
       </el-menu-item>
       <el-menu-item index="3">
         <el-icon :size="50"><Apple /></el-icon>
