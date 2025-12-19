@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
-import { Check, Sunny, Moon, Edit, Close, Plus } from '@element-plus/icons-vue';
+import { Check, Sunny, Moon, Edit, Close, Plus, ShoppingCart } from '@element-plus/icons-vue';
 import { ref, reactive, computed } from 'vue';
 
 import { useRecipesStore } from '@/stores/recipes';
 import { useMenusStore } from '@/stores/menus';
+import { usePurchasesStore } from '@/stores/purchases';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import loadingUtils from '../CustomLoading';
@@ -14,6 +15,7 @@ import showMessage from '../CustomMessage';
 const router = useRouter();
 const recipesStore = useRecipesStore();
 const menusStore = useMenusStore();
+const purchasesStore = usePurchasesStore();
 
 const isMenuListDialogVisible = ref(false);
 const isAddMenuDialogVisible = ref(false);
@@ -198,6 +200,57 @@ async function updateMenu() {
   loadingUtils.closeLoading();
 }
 
+// 買い物リストに追加（献立全体）
+async function addToShoppingList(menus: any[]) {
+  const ingredientsToAdd: any[] = [];
+  
+  menus.forEach(menu => {
+    if (!menu) return;
+    menu.recipes.forEach((menuRecipe: any) => {
+      const fullRecipe = recipesStore.getById(menuRecipe.id);
+      if (fullRecipe && fullRecipe.ingredients) {
+        fullRecipe.ingredients.forEach((ing: any) => {
+          ingredientsToAdd.push({
+            id: ing.id,
+            quantity: ing.quantity,
+            memo: `${fullRecipe.name} 分`
+          });
+        });
+      }
+    });
+  });
+
+  if (ingredientsToAdd.length === 0) {
+    showMessage('追加する材料が見つかりませんでした。', 'warning');
+    return;
+  }
+
+  loadingUtils.startLoading();
+  await purchasesStore.addPurchases(ingredientsToAdd);
+  loadingUtils.closeLoading();
+}
+
+// 特定のレシピの材料を買い物リストに追加
+async function addRecipeToShoppingList(recipeId: any) {
+  if (!recipeId) return;
+  
+  const fullRecipe = recipesStore.getById(recipeId);
+  if (!fullRecipe || !fullRecipe.ingredients) {
+    showMessage('追加する材料が見つかりませんでした。', 'warning');
+    return;
+  }
+
+  const ingredientsToAdd = fullRecipe.ingredients.map((ing: any) => ({
+    id: ing.id,
+    quantity: ing.quantity,
+    memo: `${fullRecipe.name} 分`
+  }));
+
+  loadingUtils.startLoading();
+  await purchasesStore.addPurchases(ingredientsToAdd);
+  loadingUtils.closeLoading();
+}
+
 function dialogOpen(menuId: string, mealTime: string, recipes: any[]) {
   isMenuListDialogVisible.value = true;
 
@@ -338,7 +391,10 @@ function goToRecipeDetailView(recipeId: string) {
               <el-link @click="goToRecipeDetailView(selectedMenu[rType.value].id)" type="primary">
                 {{ selectedMenu[rType.value].name }}
               </el-link>
-              <el-button :icon="Edit" size="small" circle @click="isMainEdit[rType.value] = true" style="margin-left: 10px;"></el-button>
+              <div class="edit-actions">
+                <el-button :icon="ShoppingCart" size="small" circle @click="addRecipeToShoppingList(selectedMenu[rType.value].id)" title="材料を買い物リストに追加"></el-button>
+                <el-button :icon="Edit" size="small" circle @click="isMainEdit[rType.value] = true"></el-button>
+              </div>
             </template>
             <template v-else>
               <span class="no-recipe">未設定</span>
@@ -357,9 +413,15 @@ function goToRecipeDetailView(recipeId: string) {
           </div>
         </div>
 
-        <div style="text-align: center; margin-top: 40px; display: flex; gap: 10px; justify-content: center;">
-          <el-button class="main-button" color="#ff8e3c" @click="updateMenu">保存して閉じる</el-button>
-          <el-button type="info" @click="isMenuListDialogVisible = false">中止</el-button>
+        <div style="text-align: center; margin-top: 40px; display: flex; flex-direction: column; gap: 15px;">
+          <el-button type="success" @click="addToShoppingList([menusStore.getById(selectedMenu.id)])" :icon="ShoppingCart" plain>
+            この献立の材料を買い物リストに追加
+          </el-button>
+          
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <el-button class="main-button" color="#ff8e3c" @click="updateMenu">保存して閉じる</el-button>
+            <el-button type="info" @click="isMenuListDialogVisible = false">中止</el-button>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -432,6 +494,12 @@ function goToRecipeDetailView(recipeId: string) {
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
 }
 .edit-input-group {
   flex: 1;

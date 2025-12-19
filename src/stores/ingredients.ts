@@ -33,6 +33,10 @@ export const useIngredientsStore = defineStore('ingredients', {
             name,
             background_color,
             text_color
+          ),
+          ingredient_aliases (
+            id,
+            name
           )
         `);
 
@@ -56,20 +60,22 @@ export const useIngredientsStore = defineStore('ingredients', {
               unit: addItem.unit
             }
           ])
-          .select(
-            `
-          id,
-          name,
-          category_id,
-          unit,
-          ingredient_categories (
+          .select(`
             id,
             name,
-            background_color,
-            text_color
-          )
-        `
-          )
+            category_id,
+            unit,
+            ingredient_categories (
+              id,
+              name,
+              background_color,
+              text_color
+            ),
+            ingredient_aliases (
+              id,
+              name
+            )
+          `)
           .single();
 
         if (error) throw error;
@@ -95,20 +101,22 @@ export const useIngredientsStore = defineStore('ingredients', {
             unit: editItem.unit
           })
           .eq('id', ingredientId)
-          .select(
-            `
-          id,
-          name,
-          category_id,
-          unit,
-          ingredient_categories (
+          .select(`
             id,
             name,
-            background_color,
-            text_color
-          )
-        `
-          )
+            category_id,
+            unit,
+            ingredient_categories (
+              id,
+              name,
+              background_color,
+              text_color
+            ),
+            ingredient_aliases (
+              id,
+              name
+            )
+          `)
           .single();
 
         if (error) throw error;
@@ -141,6 +149,42 @@ export const useIngredientsStore = defineStore('ingredients', {
         showMessage('材料の削除に失敗しました。', 'error');
       }
     },
+    async addAlias(ingredientId: string, name: string) {
+      try {
+        const { data, error } = await supabase
+          .from('ingredient_aliases')
+          .insert([{ ingredient_id: ingredientId, name }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const ingredient = this.getById(ingredientId);
+        if (ingredient) {
+          if (!ingredient.aliases) ingredient.aliases = [];
+          ingredient.aliases.push({ id: data.id, name: data.name });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('別名の追加に失敗しました。', 'error');
+      }
+    },
+    async deleteAlias(ingredientId: string, aliasId: string) {
+      try {
+        const { error } = await supabase.from('ingredient_aliases').delete().eq('id', aliasId);
+
+        if (error) throw error;
+
+        const ingredient = this.getById(ingredientId);
+        if (ingredient && ingredient.aliases) {
+          const index = ingredient.aliases.findIndex((a: any) => a.id === aliasId);
+          if (index !== -1) ingredient.aliases.splice(index, 1);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('別名の削除に失敗しました。', 'error');
+      }
+    },
     mapRow(row: any) {
       return {
         id: row.id,
@@ -149,7 +193,8 @@ export const useIngredientsStore = defineStore('ingredients', {
         categoryName: row.ingredient_categories.name,
         backgroundColor: row.ingredient_categories.background_color,
         textColor: row.ingredient_categories.text_color,
-        unit: row.unit
+        unit: row.unit,
+        aliases: row.ingredient_aliases || []
       };
     }
   }

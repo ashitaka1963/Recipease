@@ -121,7 +121,13 @@ async function saveIngredient() {
   if (isEdit.value) {
     await ingredientsStore.editIngredient({ ...form });
   } else {
-    await ingredientsStore.addIngredient({ ...form });
+    const newIngredient = await ingredientsStore.addIngredient({ ...form });
+    // 新規登録時に追加しておいた別名を保存
+    if (newIngredient && localAliases.value.length > 0) {
+      for (const alias of localAliases.value) {
+        await ingredientsStore.addAlias(newIngredient.id, alias.name);
+      }
+    }
   }
 
   cancelForm();
@@ -149,6 +155,7 @@ function cancelForm() {
   formEl.resetFields();
 
   Object.assign(form, defaultForm);
+  localAliases.value = [];
   isDialogVisible.value = false;
 }
 
@@ -162,6 +169,28 @@ function onCancelButtonClick() {
   deleteIngredientName.value = '';
   deleteIngredientId.value = '';
 }
+
+const newAliasName = ref('');
+const localAliases = ref<any[]>([]);
+
+async function addAlias() {
+  if (!newAliasName.value) return;
+  if (isEdit.value && form.id) {
+    await ingredientsStore.addAlias(form.id, newAliasName.value);
+  } else {
+    // 新規登録時はローカルリストに追加
+    localAliases.value.push({ id: Date.now().toString(), name: newAliasName.value });
+  }
+  newAliasName.value = '';
+}
+
+async function removeAlias(aliasId: string) {
+  if (isEdit.value && form.id) {
+    await ingredientsStore.deleteAlias(form.id, aliasId);
+  } else {
+    localAliases.value = localAliases.value.filter(a => a.id !== aliasId);
+  }
+}
 </script>
 
 <template>
@@ -171,7 +200,18 @@ function onCancelButtonClick() {
       <el-row>
         <el-col :span="24">
           <el-table :data="ingredients" style="width: 100%">
-            <el-table-column prop="name" label="名前" />
+             <el-table-column prop="name" label="名前">
+              <template #default="scope">
+                <div class="name-cell">
+                  <span>{{ scope.row.name }}</span>
+                  <div class="alias-tags" v-if="scope.row.aliases?.length">
+                    <el-tag v-for="alias in scope.row.aliases" :key="alias.id" size="small" type="info" class="alias-tag">
+                      {{ alias.name }}
+                    </el-tag>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
 
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
@@ -250,6 +290,44 @@ function onCancelButtonClick() {
             <el-input v-model="form.unit" />
           </el-form-item>
         </template>
+
+        <!-- 別名管理セクション -->
+        <el-divider content-position="left">別名の管理（検索キーワード）</el-divider>
+        <div class="alias-manager">
+          <div class="alias-input">
+            <el-input v-model="newAliasName" placeholder="新しい別名を入力" @keyup.enter="addAlias">
+              <template #append>
+                <el-button @click="addAlias">追加</el-button>
+              </template>
+            </el-input>
+          </div>
+          <div class="alias-list">
+            <!-- 編集時のDBデータ -->
+            <template v-if="isEdit && form.id">
+              <el-tag
+                v-for="alias in ingredientsStore.getById(form.id)?.aliases || []"
+                :key="alias.id"
+                closable
+                @close="removeAlias(alias.id)"
+                class="alias-item"
+              >
+                {{ alias.name }}
+              </el-tag>
+            </template>
+            <!-- 新規登録時のローカルデータ -->
+            <template v-else>
+              <el-tag
+                v-for="alias in localAliases"
+                :key="alias.id"
+                closable
+                @close="removeAlias(alias.id)"
+                class="alias-item"
+              >
+                {{ alias.name }}
+              </el-tag>
+            </template>
+          </div>
+        </div>
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
             dialogButtonName
@@ -276,5 +354,39 @@ function onCancelButtonClick() {
   --el-tag-bg-color: #fdfbec;
   --el-tag-border-color: #faf9d8;
   --el-tag-hover-color: #e6db3c;
+}
+
+.name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alias-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.alias-tag {
+  opacity: 0.8;
+}
+
+.alias-manager {
+  padding: 10px;
+}
+
+.alias-input {
+  margin-bottom: 12px;
+}
+
+.alias-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alias-item {
+  margin-bottom: 4px;
 }
 </style>

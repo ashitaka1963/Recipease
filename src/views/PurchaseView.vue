@@ -7,20 +7,26 @@ import type { FormInstance, FormRules } from 'element-plus';
 import { usePurchasesStore } from '@/stores/purchases';
 import { useIngredientsStore } from '@/stores/ingredients';
 import { useIngredientCategoriesStore } from '@/stores/ingredientCategories';
+import { useFrequentItemsStore } from '@/stores/frequentItems';
+import { Star, Connection } from '@element-plus/icons-vue';
 
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
 import loadingUtils from '../CustomLoading';
+import showMessage from '../CustomMessage';
 
 const purchasesStore = usePurchasesStore();
 const ingredientsStore = useIngredientsStore();
 const ingredientCategoriesStore = useIngredientCategoriesStore();
+const frequentItemsStore = useFrequentItemsStore();
+frequentItemsStore.loadItems();
 
 
 const ruleFormRef = ref<FormInstance>();
 const isDialogVisible = ref(false);
 const isConfirmDialogVisible = ref(false);
+const isFrequentDialogVisible = ref(false);
 const deletePurchaseId = ref('');
 const deletePurchaseName = ref('');
 const isEdit = ref(true);
@@ -141,10 +147,11 @@ const groupedOptions = computed<any[]>(() => {
   const query = searchQuery.value.trim();
   const lowerQuery = query.toLowerCase();
 
-  // フィルタリング
+  // フィルタリング（名前または別名で検索）
   const filtered = lowerQuery
     ? ingredientsStore.ingredients.filter((i: any) =>
-        i.name.toLowerCase().includes(lowerQuery)
+        i.name.toLowerCase().includes(lowerQuery) ||
+        (i.aliases && i.aliases.some((a: any) => a.name.toLowerCase().includes(lowerQuery)))
       )
     : ingredientsStore.ingredients;
 
@@ -169,8 +176,11 @@ const groupedOptions = computed<any[]>(() => {
 
   const groups = Object.values(groupsMap);
 
-  // 未登録の入力がある場合に「新規作成」オプションを先頭に追加
-  if (query && !ingredientsStore.ingredients.some((i: any) => i.name.toLowerCase() === lowerQuery)) {
+  // 未登録の入力（正式名にも別名にも一致しない場合）がある場合に「新規追加」を表示
+  if (query && !ingredientsStore.ingredients.some((i: any) => 
+    i.name.toLowerCase() === lowerQuery || 
+    (i.aliases && i.aliases.some((a: any) => a.name.toLowerCase() === lowerQuery))
+  )) {
     groups.unshift({
       label: '新規作成',
       options: [
@@ -314,6 +324,45 @@ function onCancelButtonClick() {
   deletePurchaseId.value = '';
 }
 
+async function addFrequentItemsToPurchase() {
+  if (frequentItemsStore.items.length === 0) {
+    showMessage('「いつものリスト」が空です。', 'warning');
+    return;
+  }
+
+  loadingUtils.startLoading();
+  const payload = frequentItemsStore.items.map(item => ({
+    id: item.ingredientId,
+    quantity: item.quantity,
+    memo: item.memo || '定番品'
+  }));
+
+  await purchasesStore.addPurchases(payload);
+  loadingUtils.closeLoading();
+}
+
+function removeFrequentItem(index: number) {
+  frequentItemsStore.removeItem(index);
+}
+
+const frequentItemForm = reactive({
+  ingredientId: null,
+  quantity: null,
+  memo: ''
+});
+
+function addFrequentItemToList() {
+  if (!frequentItemForm.ingredientId) return;
+  frequentItemsStore.addItem(
+    frequentItemForm.ingredientId,
+    frequentItemForm.quantity,
+    frequentItemForm.memo
+  );
+  frequentItemForm.ingredientId = null;
+  frequentItemForm.quantity = null;
+  frequentItemForm.memo = '';
+}
+
 // Ingredient Creation Methods
 const handleIngredientChange = (val: string | number) => {
   searchQuery.value = '';
@@ -368,6 +417,37 @@ function cancelIngredientForm() {
   <main>
     <PageHeader headerName="買い物リスト" />
     <div class="container">
+      <!-- 買い物リスト操作ボタン（レスポンシブ） -->
+      <div class="action-bar">
+        <el-button
+          type="success"
+          plain
+          :icon="Connection"
+          @click="addFrequentItemsToPurchase"
+        >
+          <span class="btn-text">いつもの品を一括追加</span>
+        </el-button>
+        <el-button
+          type="info"
+          plain
+          :icon="Star"
+          @click="isFrequentDialogVisible = true"
+        >
+          <span class="btn-text">定番リスト編集</span>
+        </el-button>
+        <el-button
+          class="main-button"
+          color="#ff8e3c"
+          :icon="Plus"
+          @click="
+            isDialogVisible = true;
+            isEdit = false;
+          "
+        >
+          追加
+        </el-button>
+      </div>
+
       <!-- 買い物リスト -->
       <el-row>
         <el-col :span="24">
@@ -400,18 +480,7 @@ function cancelIngredientForm() {
               </template>
             </el-table-column>
             <el-table-column prop="memo" label="メモ" />
-            <el-table-column width="100">
-              <template #header>
-                <el-button
-                  class="main-button"
-                  color="#ff8e3c"
-                  @click="
-                    isDialogVisible = true;
-                    isEdit = false;
-                  "
-                  >追加</el-button
-                >
-              </template>
+            <el-table-column width="100" label="操作">
               <template #default="scope">
                 <el-button
                   class="main-icon-button"
@@ -600,6 +669,44 @@ function cancelIngredientForm() {
       @clickConfirmed="onConfirmButtonClick"
       @clickCanceled="onCancelButtonClick"
     />
+
+    <!-- 定番リスト編集ダイアログ -->
+    <el-dialog v-model="isFrequentDialogVisible" title="定番リスト（よく買うもの）の編集" width="500px" align-center>
+      <div class="frequent-manager">
+        <el-form :inline="true" :model="frequentItemForm" class="frequent-add-form">
+          <el-form-item label="材料" style="margin-bottom: 10px;">
+            <el-select v-model="frequentItemForm.ingredientId" placeholder="材料を選択" filterable style="width: 180px">
+              <el-option-group v-for="group in groupedOptions" :key="group.label" :label="group.label">
+                <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value" />
+              </el-option-group>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="数量" style="margin-bottom: 10px;">
+            <el-input v-model="frequentItemForm.quantity" placeholder="1" style="width: 80px" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="addFrequentItemToList" :disabled="!frequentItemForm.ingredientId">追加</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-table :data="frequentItemsStore.items" style="width: 100%; margin-top: 20px;" max-height="300px">
+          <el-table-column label="材料">
+            <template #default="scope">
+              {{ ingredientsStore.getById(scope.row.ingredientId)?.name }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="quantity" label="数量" width="80" />
+          <el-table-column width="60">
+            <template #default="scope">
+              <el-button type="danger" :icon="Delete" circle size="small" @click="removeFrequentItem(scope.$index)" />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="isFrequentDialogVisible = false">閉じる</el-button>
+      </template>
+    </el-dialog>
   </main>
 </template>
 
@@ -640,5 +747,54 @@ el-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 600px) {
+  .action-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 8px;
+  }
+  .action-bar .el-button {
+    margin: 0 !important;
+    width: 100%;
+  }
+  .action-bar .el-button:last-child {
+    grid-column: span 2;
+  }
+  .btn-text {
+    font-size: 12px;
+  }
+}
+
+.frequent-manager {
+  padding: 10px;
+}
+
+.frequent-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 </style>
