@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRecipesStore } from '@/stores/recipes';
 import { useIngredientsStore } from '@/stores/ingredients';
-import { Plus, Close } from '@element-plus/icons-vue';
+import { Plus, Close, Edit } from '@element-plus/icons-vue';
 
 import loadingUtils from '../../CustomLoading';
 
@@ -63,10 +63,13 @@ const groupedOptions = computed<any[]>(() =>
 // ========================================
 // Methods
 // ========================================
-init();
+onMounted(() => {
+  init();
+});
 
 function init() {
-  // getIngredients();
+  if (!recipe.value) return;
+  
   form.ingredients.splice(
     0,
     form.ingredients.length, // 現在の要素を全削除
@@ -109,15 +112,11 @@ async function saveIngredients() {
 </script>
 
 <template>
-  <div class="container">
-    <el-row>
-      <el-col :span="20">
-        <el-text tag="p" class="sub-title">材料（{{ recipe.servingSize }}人分）</el-text>
-      </el-col>
-      <el-col :span="4">
-        <el-button class="main-button" color="#ff8e3c" @click="openDialog">編集</el-button>
-      </el-col>
-    </el-row>
+  <div v-if="recipe" class="container">
+    <div class="header-with-edit">
+      <el-text tag="p" class="sub-title">材料（{{ recipe.servingSize || 2 }}人分）</el-text>
+      <el-button class="main-button" color="#ff8e3c" size="small" :icon="Edit" @click="openDialog">編集</el-button>
+    </div>
     <el-row>
       <el-col :span="24">
         <el-table :data="recipe.ingredients" style="width: 100%">
@@ -196,4 +195,16 @@ async function saveIngredients() {
 /* .el-dialog__body {
   padding: 0px !important;
 } */
+
+.header-with-edit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.sub-title {
+  font-weight: bold;
+  font-size: 1.2rem !important;
+  margin-bottom: 0 !important;
+}
 </style>

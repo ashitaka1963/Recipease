@@ -4,6 +4,7 @@ import showMessage from '../CustomMessage';
 
 const TABLE_NAME = 'recipes';
 const RECIPE_INGREDIENTS_TABLE_NAME = 'recipe_ingredients';
+const RECIPE_STEPS_TABLE_NAME = 'recipe_steps';
 
 const RECIPE_LIST_SELECT = `
           id, 
@@ -12,6 +13,10 @@ const RECIPE_LIST_SELECT = `
           genre,
           reference_url,
           dish_type,
+          cooking_time,
+          serving_size,
+          rating,
+          image_url,
           recipe_ingredients  (
             id, 
             quantity,
@@ -69,7 +74,9 @@ export const useRecipesStore = defineStore('recipes', {
               description: addItem.description,
               genre: addItem.genre,
               reference_url: addItem.referenceUrl,
-              dish_type: addItem.type
+              dish_type: addItem.type,
+              rating: addItem.rating || 0,
+              image_url: addItem.imageUrl
             }
           ])
           .select('id') // 登録したレコードのIDを取得
@@ -123,7 +130,11 @@ export const useRecipesStore = defineStore('recipes', {
             description: editItem.description,
             genre: editItem.genre,
             reference_url: editItem.referenceUrl,
-            dish_type: editItem.type
+            dish_type: editItem.type,
+            cooking_time: editItem.cookingTime,
+            serving_size: editItem.servingSize,
+            rating: editItem.rating,
+            image_url: editItem.imageUrl
           })
           .eq('id', recipeId);
 
@@ -211,6 +222,64 @@ export const useRecipesStore = defineStore('recipes', {
         return null;
       }
     },
+    async editRecipeSteps(recipeId: number, steps: any[]) {
+      try {
+        // --- ① レシピ手順を一旦削除 ---
+        await supabase.from(RECIPE_STEPS_TABLE_NAME).delete().eq('recipe_id', recipeId);
+
+        // --- ② 手順を追加 ---
+        if (steps.length > 0) {
+          const payload = steps.map((s: any, index: number) => ({
+            recipe_id: recipeId,
+            step_no: index + 1,
+            description: s.description
+          }));
+
+          const { error: stepsError } = await supabase.from(RECIPE_STEPS_TABLE_NAME).insert(payload);
+          if (stepsError) throw stepsError;
+        }
+
+        // --- ③ 更新データ取得 --
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select(RECIPE_LIST_SELECT)
+          .eq('id', recipeId)
+          .single();
+
+        if (error) throw error;
+
+        // ローカルキャッシュを更新
+        const updateRecipe = this.getById(recipeId);
+        Object.assign(updateRecipe, this.mapRow(data));
+
+        showMessage('手順が更新されました。', 'success');
+      } catch (error: any) {
+        console.error('Error:', error);
+        showMessage('手順の更新に失敗しました。', 'error');
+        return null;
+      }
+    },
+    async uploadImage(file: File) {
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('recipe-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('recipe-images').getPublicUrl(filePath);
+
+        return data.publicUrl;
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('画像のアップロードに失敗しました。', 'error');
+        return null;
+      }
+    },
     async deleteRecipe(recipeId: string) {
       try {
         // --- レシピ材料テーブルを先に削除 ---
@@ -243,6 +312,10 @@ export const useRecipesStore = defineStore('recipes', {
         genre: row.genre,
         referenceUrl: row.reference_url,
         type: row.dish_type,
+        cookingTime: row.cooking_time,
+        servingSize: row.serving_size,
+        rating: row.rating,
+        imageUrl: row.image_url,
 
         ingredients: row.recipe_ingredients.map((ri: any) => ({
           id: ri.ingredients.id,
@@ -251,11 +324,13 @@ export const useRecipesStore = defineStore('recipes', {
           unit: ri.ingredients.unit,
           categoryId: ri.ingredients.category_id
         })),
-        steps: row.recipe_steps.map((ri: any) => ({
-          id: ri.id,
-          stepNo: ri.step_no,
-          description: ri.description
-        }))
+        steps: row.recipe_steps
+          .sort((a: any, b: any) => a.step_no - b.step_no)
+          .map((ri: any) => ({
+            id: ri.id,
+            stepNo: ri.step_no,
+            description: ri.description
+          }))
       };
     }
   }
