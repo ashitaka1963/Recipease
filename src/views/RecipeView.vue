@@ -34,6 +34,7 @@ const viewMode = ref('list'); // 'list' or 'grid'
 const searchQuery = ref('');
 const filterType = ref('');
 const filterGenre = ref('');
+const filterIngredient = ref<number | ''>('');
 
 const typeOptions = [
   {
@@ -214,7 +215,8 @@ const filteredRecipes = computed(() => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchesType = !filterType.value || recipe.type === filterType.value;
     const matchesGenre = !filterGenre.value || recipe.genre === filterGenre.value;
-    return matchesSearch && matchesType && matchesGenre;
+    const matchesIngredient = !filterIngredient.value || recipe.ingredients?.some((ing: any) => ing.id === filterIngredient.value);
+    return matchesSearch && matchesType && matchesGenre && matchesIngredient;
   });
 });
 
@@ -444,6 +446,44 @@ function selectedType(options: any, name: string) {
   margin-bottom: 40px;
 }
 
+@media (max-width: 600px) {
+  .recipe-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .filter-controls {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .search-input {
+    min-width: 100%;
+  }
+  
+  .filter-select {
+    flex: 1;
+    min-width: 100px;
+  }
+  
+  .recipe-card-content {
+    padding: 10px;
+  }
+  
+  .recipe-card-title {
+    font-size: 1rem;
+    margin-bottom: 5px;
+  }
+  
+  .recipe-card-meta {
+    margin-bottom: 8px;
+  }
+  
+  .recipe-card-actions {
+    padding-top: 8px;
+  }
+}
+
 .recipe-card {
   border-radius: 12px;
   overflow: hidden;
@@ -575,6 +615,20 @@ function selectedType(options: any, name: string) {
             :label="item.label"
             :value="item.value"
           />
+        </el-select>
+        <el-select v-model="filterIngredient" placeholder="材料" clearable class="filter-select" filterable>
+          <el-option-group
+            v-for="group in groupedOptions"
+            :key="group.label"
+            :label="group.label"
+          >
+            <el-option
+              v-for="item in group.options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-option-group>
         </el-select>
         
         <el-divider direction="vertical" class="hidden-xs-only" />
