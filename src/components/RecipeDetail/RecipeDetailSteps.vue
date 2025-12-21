@@ -38,6 +38,32 @@ const next = () => {
   }
 };
 
+/**
+ * 手順内の材料名を抽出し、分量を付与してハイライトする
+ */
+function formatDescription(description: string) {
+  if (!description || !recipe.value || !recipe.value.ingredients) return description;
+
+  let formatted = description;
+  
+  // 材料名の長い順にソート（部分一致での誤爆を防ぐため）
+  const sortedIngredients = [...recipe.value.ingredients].sort((a, b) => b.name.length - a.name.length);
+
+  sortedIngredients.forEach((ing: any) => {
+    if (!ing.name) return;
+    
+    // まだハイライトされていない箇所を検索して置換
+    // すでに <span> で囲まれている場合は無視するようにする
+    const escapedName = ing.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(?<!<span[^>]*>)${escapedName}(?![^<]*</span>)`, 'g');
+    
+    const quantityStr = ing.quantity ? `<small class="ing-qty">(${ing.quantity})</small>` : '';
+    formatted = formatted.replace(regex, `<span class="highlight-ing">${ing.name}${quantityStr}</span>`);
+  });
+
+  return formatted;
+}
+
 function openEditDialog() {
   form.steps = recipe.value.steps.map((s: any) => ({ ...s }));
   isDialogVisible.value = true;
@@ -85,9 +111,12 @@ async function saveSteps() {
         <el-step
           v-for="(step, index) in recipe.steps"
           :key="step.id || index"
-          :title="'Step ' + (index + 1)"
-          :description="step.description"
-        />
+          :title="'Step ' + (Number(index) + 1)"
+        >
+          <template #description>
+            <div class="step-desc" v-html="formatDescription(step.description)"></div>
+          </template>
+        </el-step>
       </el-steps>
     </div>
     <el-empty v-else description="手順が登録されていません" />
@@ -138,6 +167,25 @@ async function saveSteps() {
   background: white;
   border-radius: 8px;
   cursor: pointer;
+}
+.step-desc {
+  margin-bottom: 25px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #303133;
+}
+:deep(.highlight-ing) {
+  color: #ff8e3c;
+  font-weight: bold;
+  background-color: #fff4ec;
+  padding: 0 4px;
+  border-radius: 4px;
+  display: inline-block;
+}
+:deep(.ing-qty) {
+  font-weight: normal;
+  color: #606266;
+  margin-left: 2px;
 }
 :deep(.el-step__description) {
   margin-bottom: 25px;
