@@ -290,6 +290,14 @@ export const useRecipesStore = defineStore('recipes', {
 
         if (recipeIngredientsError) throw recipeIngredientsError;
 
+        // --- レシピテーブルを先に削除 ---
+        const { error: recipeStepsError } = await supabase
+          .from(RECIPE_STEPS_TABLE_NAME)
+          .delete()
+          .eq('recipe_id', recipeId);
+        
+        if (recipeStepsError) throw recipeStepsError;
+
         // --- レシピテーブルを削除 ---
         const { error } = await supabase.from(TABLE_NAME).delete().eq('id', recipeId);
         if (error) throw error;
@@ -302,6 +310,102 @@ export const useRecipesStore = defineStore('recipes', {
       } catch (error: any) {
         console.error('Error:', error);
         showMessage('レシピの削除に失敗しました。', 'error');
+      }
+    },
+
+    /**
+     * CSVインポート
+     */
+    async importRecipes(csvData: any[]) {
+      try {
+        // 1. 材料情報を一括取得（マッピング用）
+        const { data: ingredients } = await supabase.from('ingredients').select('id, name');
+        const { data: aliases } = await supabase.from('ingredient_aliases').select('id, name, ingredient_id');
+        
+        const ingMap: Record<string, string> = {};
+        ingredients?.forEach(i => { ingMap[i.name] = i.id; });
+        aliases?.forEach(a => { ingMap[a.name] = a.ingredient_id; });
+
+        for (const item of csvData) {
+          // 2. レシピ本体の作成
+          const { data: recipe, error: recipeError } = await supabase
+            .from(TABLE_NAME)
+            .insert({
+              name: item.name,
+              dish_type: item.type,
+              genre: item.genre,
+              cooking_time: item.cookingTime ? Number(item.cookingTime) : null,
+              serving_size: item.servingSize ? Number(item.servingSize) : 2,
+              rating: item.rating ? Number(item.rating) : 0,
+              reference_url: item.referenceUrl,
+              description: item.description
+            })
+            .select()
+            .single();
+
+          if (recipeError) {
+            console.error('Recipe Error:', recipeError);
+            continue;
+          }
+
+          // 3. 材料リストのパースと登録
+          if (item.ingredients) {
+            const riList = item.ingredients.split('|');
+            const riPayload = [];
+            
+            for (const riStr of riList) {
+              const [name, qty] = riStr.split(':');
+              if (!name) continue;
+
+              let ingId = ingMap[name.trim()];
+              
+              // 材料がなければ新規作成
+              if (!ingId) {
+                const { data: newIng } = await supabase
+                  .from('ingredients')
+                  .insert({ name: name.trim(), category_id: 7 }) // 未分類
+                  .select()
+                  .single();
+                if (newIng) {
+                  ingId = newIng.id;
+                  ingMap[name.trim()] = ingId;
+                }
+              }
+
+              if (ingId) {
+                riPayload.push({
+                  recipe_id: recipe.id,
+                  ingredient_id: ingId,
+                  quantity: qty || ''
+                });
+              }
+            }
+            if (riPayload.length > 0) {
+              await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).insert(riPayload);
+            }
+          }
+
+          // 4. 手順リストのパースと登録
+          if (item.steps) {
+            const stepList = item.steps.split('|');
+            const stepPayload = stepList.map((sDesc: string, idx: number) => ({
+              recipe_id: recipe.id,
+              step_no: idx + 1,
+              description: sDesc.trim()
+            })).filter((s: any) => s.description);
+
+            if (stepPayload.length > 0) {
+              await supabase.from(RECIPE_STEPS_TABLE_NAME).insert(stepPayload);
+            }
+          }
+        }
+
+        // 全件再取得
+        await this.fetchRecipes();
+        showMessage('レシピのインポートが完了しました。', 'success');
+      } catch (error) {
+        console.error('Import Error:', error);
+        showMessage('レシピのインポートに失敗しました。', 'error');
       }
     },
     mapRow(row: any) {

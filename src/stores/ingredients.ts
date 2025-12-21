@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { supabase } from '../lib/supabaseClient';
 import showMessage from '../CustomMessage';
+import loadingUtils from '../CustomLoading';
 
 const TABLE_NAME = 'ingredients';
 
@@ -183,6 +184,67 @@ export const useIngredientsStore = defineStore('ingredients', {
       } catch (error) {
         console.error('Error:', error);
         showMessage('別名の削除に失敗しました。', 'error');
+      }
+    },
+
+    /**
+     * CSVインポート
+     */
+    async importIngredients(csvData: any[]) {
+      try {
+        loadingUtils.startLoading();
+        
+        // カテゴリー一覧を取得（名前からIDを引くため）
+        const { data: categories } = await supabase.from('ingredient_categories').select('id, name');
+        const categoryMap: Record<string, number> = {};
+        categories?.forEach(c => {
+          categoryMap[c.name] = c.id;
+        });
+
+        for (const item of csvData) {
+          // 1. 材料の登録/更新
+          const categoryId = categoryMap[item.category] || 7; // デフォルトは「未分類」のIDを想定
+          
+          const { data: ingredient, error: ingError } = await supabase
+            .from(TABLE_NAME)
+            .upsert({ 
+              name: item.name, 
+              category_id: categoryId, 
+              unit: item.unit 
+            }, { onConflict: 'name' })
+            .select()
+            .single();
+
+          if (ingError) {
+            console.error('Ing Error:', ingError);
+            continue;
+          }
+
+          // 2. エイリアスの登録
+          if (item.aliases) {
+            const aliasNames = item.aliases.split('|');
+            for (const aliasName of aliasNames) {
+              if (!aliasName.trim()) continue;
+              await supabase
+                .from('ingredient_aliases')
+                .upsert({ 
+                  ingredient_id: ingredient.id, 
+                  name: aliasName.trim() 
+                }, { onConflict: 'ingredient_id, name' });
+            }
+          }
+        }
+
+        // 全件再取得
+        this.ingredients = []; // fetchIngredients のガード対策
+        await this.fetchIngredients();
+        
+        showMessage('インポートが完了しました。', 'success');
+      } catch (error) {
+        console.error('Import Error:', error);
+        showMessage('インポートに失敗しました。', 'error');
+      } finally {
+        loadingUtils.closeLoading();
       }
     },
     mapRow(row: any) {

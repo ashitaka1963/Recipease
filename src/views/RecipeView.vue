@@ -2,7 +2,7 @@
 // TODO:新規登録後、formの値が残る
 // TODO:https://element-plus.org/en-US/component/upload.html#photo-wall
 
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import { Search, Delete, Edit, Link, ShoppingCart, Plus, Close, Grid, Menu } from '@element-plus/icons-vue';
@@ -105,23 +105,16 @@ const genreOptions = [
   }
 ];
 
-const levelOptions = [
-  {
-    value: '低',
-    label: '低',
-    type: ''
-  },
-  {
-    value: '中',
-    label: '中',
-    type: 'warning'
-  },
-  {
-    value: '高',
-    label: '高',
-    type: 'danger'
-  }
+const cookingTimeOptions = [
+  { value: 10, label: '10分以内' },
+  { value: 20, label: '20分程度' },
+  { value: 30, label: '30分程度' },
+  { value: 45, label: '45分程度' },
+  { value: 60, label: '1時間程度' },
+  { value: 90, label: '1.5時間以上' }
 ];
+
+
 
 interface Recipe {
   id: string | null;
@@ -400,6 +393,12 @@ function selectedType(options: any, name: string) {
   const category = options.find((categories: any) => categories.label === name);
   return category ? category.type : '';
 }
+
+function formatCookingTime(minutes: number) {
+  const option = cookingTimeOptions.find((opt) => opt.value === minutes);
+  return option ? option.label : minutes ? `${minutes}分` : '--';
+}
+
 </script>
 
 <style scoped>
@@ -766,7 +765,7 @@ function selectedType(options: any, name: string) {
               <el-rate v-model="recipe.rating" disabled size="small" />
               <div v-if="recipe.cookingTime" class="recipe-card-time">
                 <el-icon><Timer /></el-icon>
-                <span>{{ recipe.cookingTime }}分</span>
+                <span>{{ formatCookingTime(recipe.cookingTime) }}</span>
               </div>
             </div>
             <div class="recipe-card-actions" @click.stop>
@@ -854,8 +853,15 @@ function selectedType(options: any, name: string) {
           <el-input v-model="form.referenceUrl" />
         </el-form-item>
 
-        <el-form-item label="調理時間(分)" prop="cookingTime">
-          <el-input-number v-model="form.cookingTime" :min="0" />
+        <el-form-item label="調理時間" prop="cookingTime">
+          <el-select v-model="form.cookingTime" placeholder="選択してください" clearable>
+            <el-option
+              v-for="item in cookingTimeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="人前" prop="servingSize">

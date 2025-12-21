@@ -7,7 +7,8 @@ import {
   Calendar,
   ForkSpoon,
   Star,
-  Apple
+  Apple,
+  Setting
 } from '@element-plus/icons-vue';
 
 interface Emits {
@@ -24,7 +25,7 @@ const routeMap = new Map([
   ['4', 'PurchaseView'],
   ['5', 'CalendarView'],
   ['6', 'RecipeView'],
-  ['7', 'CsvImportView'],
+  ['7', 'DataManagementView'],
   ['8', 'RecipeStockView']
 ]);
 
@@ -75,10 +76,10 @@ const menuClick = (key: string) => {
         <el-icon :size="50"><Apple /></el-icon>
         <template #title>材料</template>
       </el-menu-item>
-      <!-- <el-menu-item index="7">
-      <el-icon :size="50"><UploadFilled /></el-icon>
-      <template #title>一括登録</template>
-    </el-menu-item> -->
+      <el-menu-item index="7">
+        <el-icon :size="50"><Setting /></el-icon>
+        <template #title>データ管理</template>
+      </el-menu-item>
 
       <!-- <el-menu-item index="2">
       <el-icon :size="50"><user /></el-icon>

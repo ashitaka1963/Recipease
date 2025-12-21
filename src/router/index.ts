@@ -3,7 +3,7 @@ import IngredientView from '../views/IngredientView.vue';
 import RecipeView from '../views/RecipeView.vue';
 import RecipeDetailView from '../views/RecipeDetailView.vue';
 import CalendarView from '../views/CalendarView.vue';
-import CsvImportView from '../views/CsvImportView.vue';
+import DataManagementView from '../views/DataManagementView.vue';
 import PurchaseView from '../views/PurchaseView.vue';
 import RecipeStockView from '../views/RecipeStockView.vue';
 
@@ -41,9 +41,9 @@ const router = createRouter({
       component: CalendarView
     },
     {
-      path: '/csvImportView',
-      name: 'CsvImportView',
-      component: CsvImportView
+      path: '/data-management',
+      name: 'DataManagementView',
+      component: DataManagementView
     },
     {
       path: '/purchaseView',

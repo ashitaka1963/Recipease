@@ -36,6 +36,15 @@ const genreOptions = [
   { value: 'お菓子', label: 'お菓子' }
 ];
 
+const cookingTimeOptions = [
+  { value: 10, label: '10分以内' },
+  { value: 20, label: '20分程度' },
+  { value: 30, label: '30分程度' },
+  { value: 45, label: '45分程度' },
+  { value: 60, label: '1時間程度' },
+  { value: 90, label: '1.5時間以上' }
+];
+
 const form = reactive({
   name: '',
   description: '',
@@ -65,6 +74,11 @@ const recipe = computed((): any => {
 const recipeType = computed((): any => {
   return tagType[recipe.value?.type] || '';
 });
+
+function formatCookingTime(minutes: number) {
+  const option = cookingTimeOptions.find((opt) => opt.value === minutes);
+  return option ? option.label : minutes ? `${minutes}分` : '--';
+}
 
 // ========================================
 // Methods
@@ -153,7 +167,7 @@ async function saveInfo() {
           <div class="meta-row">
             <div class="meta-item">
               <el-icon><Timer /></el-icon>
-              <span>{{ recipe.cookingTime || '--' }}分</span>
+              <span>{{ formatCookingTime(recipe.cookingTime) }}</span>
             </div>
             <div class="meta-item">
               <el-icon><User /></el-icon>
@@ -207,8 +221,15 @@ async function saveInfo() {
             <el-option v-for="item in genreOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="調理時間(分)">
-          <el-input-number v-model="form.cookingTime" :min="0" />
+        <el-form-item label="調理時間">
+          <el-select v-model="form.cookingTime" placeholder="選択してください" clearable>
+            <el-option
+              v-for="item in cookingTimeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="人前">
           <el-input-number v-model="form.servingSize" :min="1" />
