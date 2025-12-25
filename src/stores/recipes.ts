@@ -17,6 +17,7 @@ const RECIPE_LIST_SELECT = `
           serving_size,
           rating,
           image_url,
+          is_favorite,
           recipe_ingredients  (
             id, 
             quantity,
@@ -76,7 +77,8 @@ export const useRecipesStore = defineStore('recipes', {
               reference_url: addItem.referenceUrl,
               dish_type: addItem.type,
               rating: addItem.rating || 0,
-              image_url: addItem.imageUrl
+              image_url: addItem.imageUrl,
+              is_favorite: addItem.isFavorite || false
             }
           ])
           .select('id') // 登録したレコードのIDを取得
@@ -134,7 +136,8 @@ export const useRecipesStore = defineStore('recipes', {
             cooking_time: editItem.cookingTime,
             serving_size: editItem.servingSize,
             rating: editItem.rating,
-            image_url: editItem.imageUrl
+            image_url: editItem.imageUrl,
+            is_favorite: editItem.isFavorite
           })
           .eq('id', recipeId);
 
@@ -178,6 +181,27 @@ export const useRecipesStore = defineStore('recipes', {
         console.error('Error:', error);
         showMessage('レシピの更新に失敗しました。', 'error');
         return null;
+      }
+    },
+    async toggleFavorite(recipeId: number) {
+      try {
+        const recipe = this.getById(recipeId);
+        if (!recipe) return;
+
+        const nextStatus = !recipe.isFavorite;
+
+        const { error } = await supabase
+          .from(TABLE_NAME)
+          .update({ is_favorite: nextStatus })
+          .eq('id', recipeId);
+
+        if (error) throw error;
+
+        recipe.isFavorite = nextStatus;
+        // showMessage(nextStatus ? 'お気に入りに追加しました。' : 'お気に入りから外しました。', 'success');
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('お気に入りの作成に失敗しました。', 'error');
       }
     },
     async editRecipeIngredients(recipeId: number, editItem: any) {
@@ -420,6 +444,7 @@ export const useRecipesStore = defineStore('recipes', {
         servingSize: row.serving_size,
         rating: row.rating,
         imageUrl: row.image_url,
+        isFavorite: row.is_favorite,
 
         ingredients: row.recipe_ingredients.map((ri: any) => ({
           id: ri.ingredients.id,

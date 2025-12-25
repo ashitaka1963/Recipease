@@ -5,7 +5,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { Search, Delete, Edit, Link, ShoppingCart, Plus, Close, Grid, Menu } from '@element-plus/icons-vue';
+import { Search, Delete, Edit, Link, ShoppingCart, Plus, Close, Grid, Menu, Star, StarFilled } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
 
 import { useRecipesStore } from '@/stores/recipes';
@@ -35,6 +35,7 @@ const searchQuery = ref('');
 const filterType = ref('');
 const filterGenre = ref('');
 const filterIngredient = ref<number | ''>('');
+const showOnlyFavorites = ref(false);
 
 const typeOptions = [
   {
@@ -143,6 +144,7 @@ const form = reactive<Recipe>({
   description: '',
   rating: 0,
   imageUrl: '',
+  isFavorite: false,
   ingredients: []
 });
 
@@ -158,6 +160,7 @@ const defaultForm: Recipe = {
   description: '',
   rating: 0,
   imageUrl: '',
+  isFavorite: false,
   ingredients: []
 };
 
@@ -209,7 +212,8 @@ const filteredRecipes = computed(() => {
     const matchesType = !filterType.value || recipe.type === filterType.value;
     const matchesGenre = !filterGenre.value || recipe.genre === filterGenre.value;
     const matchesIngredient = !filterIngredient.value || recipe.ingredients?.some((ing: any) => ing.id === filterIngredient.value);
-    return matchesSearch && matchesType && matchesGenre && matchesIngredient;
+    const matchesFavorite = !showOnlyFavorites.value || recipe.isFavorite;
+    return matchesSearch && matchesType && matchesGenre && matchesIngredient && matchesFavorite;
   });
 });
 
@@ -321,6 +325,12 @@ async function handleImageChange(uploadFile: any) {
   if (url) {
     form.imageUrl = url;
   }
+  loadingUtils.closeLoading();
+}
+
+async function toggleFavorite(recipeId: number) {
+  loadingUtils.startLoading();
+  await recipesStore.toggleFavorite(recipeId);
   loadingUtils.closeLoading();
 }
 
@@ -521,6 +531,19 @@ function formatCookingTime(minutes: number) {
   padding: 15px;
 }
 
+.recipe-card-favorite {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+
+.recipe-card-favorite:hover {
+  transform: scale(1.2);
+}
+
 .recipe-card-title {
   font-size: 1.2rem;
   font-weight: bold;
@@ -652,6 +675,14 @@ function formatCookingTime(minutes: number) {
         >
           追加
         </el-button>
+
+        <el-button
+          :type="showOnlyFavorites ? 'warning' : 'info'"
+          :icon="showOnlyFavorites ? StarFilled : Star"
+          circle
+          @click="showOnlyFavorites = !showOnlyFavorites"
+          :title="showOnlyFavorites ? 'すべて表示' : 'お気に入りのみ表示'"
+        />
       </div>
 
       <el-row v-if="viewMode === 'list'">
@@ -659,6 +690,12 @@ function formatCookingTime(minutes: number) {
           <el-table :data="filteredRecipes" style="width: 100%">
             <el-table-column prop="name" label="レシピ名">
               <template #default="scope">
+                <el-link @click="toggleFavorite(scope.row.id)" :underline="false" style="margin-right: 8px;">
+                  <el-icon :color="scope.row.isFavorite ? '#ff8e3c' : '#909399'">
+                    <component :is="scope.row.isFavorite ? StarFilled : Star" />
+                  </el-icon>
+                </el-link>
+
                 <el-link @click="goToRecipeDetailView(scope.row.id)" :underline="false">
                   {{ scope.row.name }}
                 </el-link>
@@ -757,6 +794,11 @@ function formatCookingTime(minutes: number) {
               <el-tag :type="selectedType(typeOptions, recipe.type)" size="small" effect="dark">
                 {{ recipe.type }}
               </el-tag>
+            </div>
+            <div class="recipe-card-favorite" @click.stop="toggleFavorite(recipe.id)">
+               <el-icon :color="recipe.isFavorite ? '#ff8e3c' : 'white'" size="20">
+                <component :is="recipe.isFavorite ? StarFilled : Star" />
+              </el-icon>
             </div>
           </div>
           <div class="recipe-card-content">

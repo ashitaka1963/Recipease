@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import { useRecipesStore } from '@/stores/recipes';
-import { Timer, Link, Edit, User, Document } from '@element-plus/icons-vue';
+import { Timer, Link, Edit, User, Document, Star, StarFilled } from '@element-plus/icons-vue';
 import loadingUtils from '../../CustomLoading';
 
 interface Props {
@@ -136,12 +136,25 @@ async function saveInfo() {
   isDialogVisible.value = false;
   loadingUtils.closeLoading();
 }
+
+async function toggleFavorite() {
+  loadingUtils.startLoading();
+  await recipesStore.toggleFavorite(props.recipeId);
+  loadingUtils.closeLoading();
+}
 </script>
 
 <template>
   <div v-if="recipe" class="container">
     <div class="header-with-edit">
-      <el-text tag="p" class="title">{{ recipe.name }}</el-text>
+      <div class="title-with-favorite">
+        <el-text tag="p" class="title">{{ recipe.name }}</el-text>
+        <el-button type="text" @click="toggleFavorite" class="favorite-button">
+          <el-icon :color="recipe.isFavorite ? '#ff8e3c' : '#909399'" size="28">
+            <component :is="recipe.isFavorite ? StarFilled : Star" />
+          </el-icon>
+        </el-button>
+      </div>
       <el-button class="main-button" color="#ff8e3c" size="small" :icon="Edit" @click="openEditDialog">
         編集
       </el-button>
@@ -263,6 +276,19 @@ async function saveInfo() {
   font-size: 1.8rem !important;
   font-weight: bold;
   margin-bottom: 0 !important;
+}
+.title-with-favorite {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.favorite-button {
+  padding: 0;
+  height: auto;
+  transition: transform 0.2s;
+}
+.favorite-button:hover {
+  transform: scale(1.1);
 }
 .image-wrapper {
   margin-bottom: 20px;
