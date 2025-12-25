@@ -129,6 +129,7 @@ interface Recipe {
   description: string;
   rating: number;
   imageUrl: string;
+  isFavorite: boolean;
   ingredients: Array<any>;
 }
 

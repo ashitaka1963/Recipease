@@ -3,8 +3,10 @@ import { ref } from 'vue';
 import { useIngredientsStore } from '@/stores/ingredients';
 import { useRecipesStore } from '@/stores/recipes';
 import { CsvService } from '@/services/CsvService';
-import { Download, Upload, CircleCheck } from '@element-plus/icons-vue';
+import { RecipeImportService, type ImportedRecipe } from '@/services/RecipeImportService';
+import { Download, Upload, CircleCheck, Link, MagicStick } from '@element-plus/icons-vue';
 import PageHeader from '../components/parts/PageHeader.vue';
+import loadingUtils from '../CustomLoading';
 
 const ingredientsStore = useIngredientsStore();
 const recipesStore = useRecipesStore();
@@ -138,6 +140,38 @@ async function doRecipeImport() {
   await recipesStore.importRecipes(recipePreview.value);
   recipePreview.value = [];
 }
+
+// ========================================
+// Web Import Logic
+// ========================================
+const importUrl = ref('');
+const webImportPreview = ref<ImportedRecipe | null>(null);
+const isImporting = ref(false);
+
+async function handleWebImport() {
+  if (!importUrl.value) return;
+  
+  isImporting.value = true;
+  const data = await RecipeImportService.fetchFromUrl(importUrl.value);
+  if (data) {
+    webImportPreview.value = data;
+  } else {
+    // カスタムメッセージ等で通知
+  }
+  isImporting.value = false;
+}
+
+async function doWebImport() {
+  if (!webImportPreview.value) return;
+  
+  loadingUtils.startLoading();
+  const success = await recipesStore.importSingleRecipe(webImportPreview.value);
+  if (success) {
+    webImportPreview.value = null;
+    importUrl.value = '';
+  }
+  loadingUtils.closeLoading();
+}
 </script>
 
 <template>
@@ -222,6 +256,72 @@ async function doRecipeImport() {
             </el-table>
           </div>
         </el-tab-pane>
+
+        <!-- Webインポートタブ -->
+        <el-tab-pane label="Webインポート" name="webimport">
+          <div class="action-section">
+            <el-input
+              v-model="importUrl"
+              placeholder="レシピサイトのURLを入力 (クックパッド、クラシル等)"
+              :prefix-icon="Link"
+              clearable
+              style="flex: 1"
+            />
+            <el-button 
+              type="primary" 
+              :icon="MagicStick" 
+              @click="handleWebImport"
+              :loading="isImporting"
+            >
+              レシピ情報を取得
+            </el-button>
+          </div>
+
+          <div v-if="webImportPreview" class="web-preview-card">
+            <el-card shadow="never">
+              <template #header>
+                <div class="card-header">
+                  <span class="recipe-title">{{ webImportPreview.name }}</span>
+                  <el-button type="success" @click="doWebImport">登録する</el-button>
+                </div>
+              </template>
+              
+              <div class="recipe-content">
+                <el-image 
+                  v-if="webImportPreview.imageUrl"
+                  :src="webImportPreview.imageUrl" 
+                  fit="cover" 
+                  class="recipe-img"
+                />
+                <div class="recipe-details">
+                  <p><strong>紹介:</strong> {{ webImportPreview.description || '--' }}</p>
+                  <p><strong>調理時間:</strong> {{ webImportPreview.cookingTime || '--' }}分</p>
+                  
+                  <div class="preview-lists">
+                    <div class="preview-list-col">
+                      <p><strong>材料 ({{ webImportPreview.ingredients.length }}件):</strong></p>
+                      <ul class="ing-list">
+                        <li v-for="(ing, idx) in webImportPreview.ingredients.slice(0, 5)" :key="idx">
+                          {{ ing.name }} : {{ ing.quantity }}
+                        </li>
+                        <li v-if="webImportPreview.ingredients.length > 5">...他</li>
+                      </ul>
+                    </div>
+                    <div class="preview-list-col">
+                      <p><strong>手順 ({{ webImportPreview.steps.length }}件):</strong></p>
+                      <ol class="step-list">
+                        <li v-for="(s, idx) in webImportPreview.steps.slice(0, 3)" :key="idx">
+                          {{ s }}
+                        </li>
+                        <li v-if="webImportPreview.steps.length > 3">...他</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </div>
   </main>
@@ -253,5 +353,77 @@ async function doRecipeImport() {
 .preview-header h3 {
   margin: 0;
   color: #606266;
+}
+
+.web-preview-card {
+  margin-top: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recipe-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.recipe-content {
+  display: flex;
+  gap: 20px;
+}
+
+.recipe-img {
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.recipe-details {
+  flex: 1;
+}
+
+.recipe-details p {
+  margin: 0 0 8px 0;
+}
+
+.preview-lists {
+  display: flex;
+  gap: 30px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #ebeef5;
+}
+
+.preview-list-col {
+  flex: 1;
+}
+
+.ing-list, .step-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  color: #606266;
+}
+
+.step-list li {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 600px) {
+  .recipe-content {
+    flex-direction: column;
+  }
+  .recipe-img {
+    width: 100%;
+    height: 200px;
+  }
+  .preview-lists {
+    flex-direction: column;
+    gap: 15px;
+  }
 }
 </style>

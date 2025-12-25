@@ -338,6 +338,85 @@ export const useRecipesStore = defineStore('recipes', {
     },
 
     /**
+     * 単一レシピのインポート（Webインポート用）
+     */
+    async importSingleRecipe(recipeData: any) {
+      try {
+        const { data: ingredients } = await supabase.from('ingredients').select('id, name');
+        const { data: aliases } = await supabase.from('ingredient_aliases').select('id, name, ingredient_id');
+        
+        const ingMap: Record<string, string> = {};
+        ingredients?.forEach(i => { ingMap[i.name] = i.id; });
+        aliases?.forEach(a => { ingMap[a.name] = a.ingredient_id; });
+
+        const { data: recipe, error: recipeError } = await supabase
+          .from(TABLE_NAME)
+          .insert({
+            name: recipeData.name,
+            dish_type: recipeData.type,
+            genre: recipeData.genre,
+            cooking_time: recipeData.cookingTime,
+            serving_size: recipeData.servingSize,
+            rating: 0,
+            reference_url: recipeData.referenceUrl,
+            description: recipeData.description,
+            image_url: recipeData.imageUrl
+          })
+          .select()
+          .single();
+
+        if (recipeError) throw recipeError;
+
+        if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+          const riPayload = [];
+          for (const ri of recipeData.ingredients) {
+            let ingId = ingMap[ri.name.trim()];
+            if (!ingId) {
+              const { data: newIng } = await supabase
+                .from('ingredients')
+                .insert({ name: ri.name.trim(), category_id: 7 })
+                .select()
+                .single();
+              if (newIng) {
+                ingId = newIng.id;
+                ingMap[ri.name.trim()] = ingId;
+              }
+            }
+            if (ingId) {
+              riPayload.push({
+                recipe_id: recipe.id,
+                ingredient_id: ingId,
+                quantity: ri.quantity || ''
+              });
+            }
+          }
+          if (riPayload.length > 0) {
+            await supabase.from(RECIPE_INGREDIENTS_TABLE_NAME).insert(riPayload);
+          }
+        }
+
+        if (recipeData.steps && recipeData.steps.length > 0) {
+          const stepPayload = recipeData.steps.map((sDesc: string, idx: number) => ({
+            recipe_id: recipe.id,
+            step_no: idx + 1,
+            description: sDesc.trim()
+          })).filter((s: any) => s.description);
+
+          if (stepPayload.length > 0) {
+            await supabase.from(RECIPE_STEPS_TABLE_NAME).insert(stepPayload);
+          }
+        }
+
+        await this.fetchRecipes();
+        showMessage('レシピの取り込みが完了しました。', 'success');
+        return true;
+      } catch (error) {
+        console.error('Import Error:', error);
+        showMessage('レシピの取り込みに失敗しました。', 'error');
+        return false;
+      }
+    },
+    /**
      * CSVインポート
      */
     async importRecipes(csvData: any[]) {
